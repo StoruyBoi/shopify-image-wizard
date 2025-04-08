@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import Header from '@/components/Header';
@@ -6,7 +5,7 @@ import ImageUploader from '@/components/ImageUploader';
 import OptionsSelector, { ImageOptions, ImagePurpose } from '@/components/OptionsSelector';
 import InputForm from '@/components/InputForm';
 import PreviewArea from '@/components/PreviewArea';
-import { MagicWand, Sparkles } from 'lucide-react';
+import { Wand2, Sparkles } from 'lucide-react';
 
 const Index = () => {
   const { toast } = useToast();
@@ -154,7 +153,7 @@ const Index = () => {
             <div>
               <div className="sticky top-8">
                 <h2 className="text-xl font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                  <MagicWand className="h-5 w-5 text-app-purple" />
+                  <Wand2 className="h-5 w-5 text-app-purple" />
                   Generated Output
                 </h2>
                 <PreviewArea 
