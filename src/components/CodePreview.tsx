@@ -8,16 +8,19 @@ interface CodePreviewProps {
   code: string;
   language?: string;
   title?: string;
+  codeRef?: React.RefObject<HTMLPreElement>;
 }
 
 const CodePreview: React.FC<CodePreviewProps> = ({ 
   code, 
   language = 'liquid', 
-  title = 'Generated Shopify Liquid Code' 
+  title = 'Generated Shopify Liquid Code',
+  codeRef: externalCodeRef
 }) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const codeRef = useRef<HTMLPreElement>(null);
+  const internalCodeRef = useRef<HTMLPreElement>(null);
+  const codeRef = externalCodeRef || internalCodeRef;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -33,15 +36,27 @@ const CodePreview: React.FC<CodePreviewProps> = ({
   // Add syntax highlighting effect
   useEffect(() => {
     if (codeRef.current) {
+      // Escape HTML entities first
+      const escapeHtml = (text: string) => {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      };
+      
+      const escapedCode = escapeHtml(code);
+      
       // Simple syntax highlighting for Liquid
-      const highlightedCode = code
+      const highlightedCode = escapedCode
         .replace(/({%.*?%})/g, '<span class="text-blue-400">$1</span>')
         .replace(/({{.*?}})/g, '<span class="text-green-400">$1</span>')
         .replace(/(&lt;.*?&gt;)/g, '<span class="text-purple-400">$1</span>');
       
       codeRef.current.innerHTML = highlightedCode;
     }
-  }, [code]);
+  }, [code, codeRef]);
 
   return (
     <div className="rounded-lg border overflow-hidden glass">

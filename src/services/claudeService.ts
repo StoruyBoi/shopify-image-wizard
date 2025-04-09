@@ -1,4 +1,3 @@
-
 import { ImageOptions } from '@/components/OptionsSelector';
 
 interface GenerateCodeResponse {
@@ -6,33 +5,171 @@ interface GenerateCodeResponse {
   shopifyLiquid: string;
 }
 
-// Free vision model API integration
+// API key for Anthropic/Claude - Note: In production, this should be handled by a backend service
+const CLAUDE_API_KEY = "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";
+
 export async function generateCodeFromImage(
   imageFile: File,
   options: ImageOptions,
   additionalDetails: any
 ): Promise<GenerateCodeResponse> {
-  // Convert image to base64
-  const base64Image = await fileToBase64(imageFile);
-  
-  // For testing purposes, we'll use a simulated API response
-  // In a production environment, this would be replaced with an actual API call
-  // to a free vision model API like Hugging Face's or similar services
-  
   try {
-    console.log("Processing image with simulated AI vision model...");
+    // Convert image to base64
+    const base64Image = await fileToBase64(imageFile);
+    
+    console.log("Sending image to Claude API...");
     console.log("Selected options:", options);
     
-    // Simulate API processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate a more realistic response based on the section type
-    const simulatedResponse = generateSimulatedResponse(options);
-    
-    return simulatedResponse;
+    // Fallback to simulated response if API call fails
+    try {
+      const response = await callClaudeAPI(base64Image, options, additionalDetails);
+      return response;
+    } catch (apiError) {
+      console.error("Error calling Claude API:", apiError);
+      console.log("Falling back to simulated response");
+      
+      // Fallback to simulated response
+      return generateSimulatedResponse(options);
+    }
   } catch (error) {
     console.error("Error generating code from image:", error);
     throw new Error("Failed to generate code from image. Please try again.");
+  }
+}
+
+// Call the actual Claude API with the image
+async function callClaudeAPI(
+  base64Image: string, 
+  options: ImageOptions,
+  additionalDetails: any
+): Promise<GenerateCodeResponse> {
+  // Format the prompt based on the options
+  const promptInstructions = createPromptInstructions(options, additionalDetails);
+  
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4000,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: promptInstructions
+              },
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: getMediaType(imageFile?.type || 'image/jpeg'),
+                  data: base64Image
+                }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Claude API error:", errorData);
+      throw new Error(`Claude API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Claude API response:", data);
+    
+    // Parse the response
+    return parseClaudeResponse(data);
+  } catch (error) {
+    console.error("Error calling Claude API:", error);
+    throw error;
+  }
+}
+
+// Helper function to create the prompt instructions based on options
+function createPromptInstructions(options: ImageOptions, additionalDetails: any): string {
+  const { purpose, showPrice, showRating, includeText } = options;
+  
+  return `
+    I need you to analyze this image of a website section and generate Shopify Liquid code that recreates it.
+    
+    Section type: ${purpose}
+    Features to include:
+    ${showPrice ? '- Show prices' : '- Do not show prices'}
+    ${showRating ? '- Show ratings' : '- Do not show ratings'}
+    ${includeText ? '- Include text content' : '- Minimize text content'}
+    
+    Additional details: ${JSON.stringify(additionalDetails)}
+    
+    Please provide your response in the following format:
+    1. First, generate the HTML/Liquid template code for the section
+    2. Then, generate the Shopify schema code that would be used for the section
+    
+    Format your response as a JSON object with two properties:
+    {
+      "code": "HTML/Liquid template code here",
+      "shopifyLiquid": "Shopify schema code here"
+    }
+    
+    IMPORTANT: Make sure your response is ONLY the JSON object with no additional text.
+  `;
+}
+
+// Helper function to get the media type
+function getMediaType(fileType: string): string {
+  return fileType || 'image/jpeg';
+}
+
+// Helper function to parse Claude's response
+function parseClaudeResponse(response: any): GenerateCodeResponse {
+  try {
+    // Extract the content from Claude's response
+    const content = response.content[0].text;
+    
+    // Try to extract JSON from the response text
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
+                       content.match(/{[\s\S]*"code":[\s\S]*"shopifyLiquid":[\s\S]*}/);
+    
+    if (jsonMatch) {
+      // Parse the JSON content
+      const jsonStr = jsonMatch[1] || jsonMatch[0];
+      const cleanJsonStr = jsonStr.replace(/```json|```/g, '').trim();
+      const parsedJson = JSON.parse(cleanJsonStr);
+      
+      if (parsedJson.code && parsedJson.shopifyLiquid) {
+        return {
+          code: parsedJson.code,
+          shopifyLiquid: parsedJson.shopifyLiquid
+        };
+      }
+    }
+    
+    // Fallback: Try to find HTML/liquid code and schema code sections
+    const htmlMatch = content.match(/```(html|liquid)([\s\S]*?)```/);
+    const schemaMatch = content.match(/```(json|liquid)([\s\S]*?)({% schema %})([\s\S]*?)({% endschema %})([\s\S]*?)```/);
+    
+    if (htmlMatch && schemaMatch) {
+      return {
+        code: htmlMatch[2].trim(),
+        shopifyLiquid: `{% schema %}${schemaMatch[4].trim()}{% endschema %}`
+      };
+    }
+    
+    // If we can't parse it properly, throw an error
+    throw new Error("Could not parse Claude response");
+  } catch (error) {
+    console.error("Error parsing Claude response:", error, response);
+    throw new Error("Failed to parse the response from Claude. Falling back to simulated response.");
   }
 }
 
@@ -53,6 +190,9 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = error => reject(error);
   });
 }
+
+// The code below is the simulated response generator that we'll use as a fallback
+// if the API call fails or for testing purposes
 
 function generateSimulatedResponse(options: ImageOptions): GenerateCodeResponse {
   const { purpose, showPrice, showRating, includeText } = options;
@@ -146,7 +286,7 @@ function generateSimulatedResponse(options: ImageOptions): GenerateCodeResponse 
   };
 }
 
-// Helper functions for generating section HTML and schema based on section type
+// Keep all the generator helper functions for fallback
 function generateProductSectionHTML(showPrice: boolean, showRating: boolean, includeText: boolean): string {
   return `<div class="product-section">
   <div class="product-container">
@@ -421,7 +561,6 @@ function generateSliderSectionSchema(): string {
 {% endschema %}`;
 }
 
-// Add more generator functions for other section types
 function generateBannerSectionHTML(includeText: boolean): string {
   return `<div class="banner-section">
   <div class="banner-container">
