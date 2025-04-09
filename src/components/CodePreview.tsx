@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Check, Copy, Code as CodeIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
 }) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const codeRef = useRef<HTMLPreElement>(null);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -28,6 +29,19 @@ const CodePreview: React.FC<CodePreviewProps> = ({
     
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Add syntax highlighting effect
+  useEffect(() => {
+    if (codeRef.current) {
+      // Simple syntax highlighting for Liquid
+      const highlightedCode = code
+        .replace(/({%.*?%})/g, '<span class="text-blue-400">$1</span>')
+        .replace(/({{.*?}})/g, '<span class="text-green-400">$1</span>')
+        .replace(/(&lt;.*?&gt;)/g, '<span class="text-purple-400">$1</span>');
+      
+      codeRef.current.innerHTML = highlightedCode;
+    }
+  }, [code]);
 
   return (
     <div className="rounded-lg border overflow-hidden glass">
@@ -57,7 +71,10 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       </div>
       
       <div className="p-4 bg-muted/10 relative">
-        <pre className="text-xs md:text-sm overflow-x-auto max-h-96 p-2 rounded bg-background/50 border">
+        <pre 
+          ref={codeRef}
+          className="text-xs md:text-sm overflow-x-auto max-h-96 p-2 rounded bg-background/50 border"
+        >
           <code>{code}</code>
         </pre>
       </div>

@@ -20,6 +20,18 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
 }) => {
   if (!previewUrl && !isProcessing && !generatedCode) return null;
 
+  const handleDownload = () => {
+    if (previewUrl) {
+      // Create a temporary link element
+      const a = document.createElement('a');
+      a.href = previewUrl;
+      a.download = 'shopify-section-preview.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Image Preview */}
@@ -30,7 +42,12 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
             <h3 className="font-medium">Image Preview</h3>
           </div>
           {previewUrl && !isProcessing && (
-            <Button variant="ghost" size="sm" className="gap-1 text-sm hover:text-primary">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-1 text-sm hover:text-primary"
+              onClick={handleDownload}
+            >
               <Download className="h-4 w-4" />
               <span>Download</span>
             </Button>
