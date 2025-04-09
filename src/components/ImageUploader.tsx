@@ -65,10 +65,10 @@ const ImageUploader = ({
 
   return (
     <div 
-      className={`relative border-2 border-dashed rounded-lg p-8 transition-all
+      className={`relative border-2 border-dashed rounded-lg transition-all overflow-hidden glass
         ${isDragging 
-          ? 'border-app-purple bg-app-purple/10' 
-          : 'border-gray-700 hover:border-gray-500 bg-gray-800/50'
+          ? 'border-primary bg-primary/5' 
+          : 'border-border hover:border-muted-foreground dark:hover:border-muted-foreground/50 bg-card/40'
         }
       `}
       onDragEnter={handleDragEnter}
@@ -80,25 +80,29 @@ const ImageUploader = ({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={handleFileInput}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
       />
-      <div className="flex flex-col items-center justify-center text-center space-y-3">
-        <div className="p-3 rounded-full bg-gray-700 mb-2">
+      <div className="flex flex-col items-center justify-center text-center p-10 space-y-4">
+        <div className={`p-4 rounded-full ${isDragging ? 'bg-primary/10' : 'bg-secondary'} mb-2 transition-colors`}>
           {isDragging ? (
-            <ImageIcon className="h-8 w-8 text-app-purple animate-pulse" />
+            <ImageIcon className="h-8 w-8 text-primary animate-pulse" />
           ) : (
-            <Upload className="h-8 w-8 text-gray-400" />
+            <Upload className="h-8 w-8 text-muted-foreground" />
           )}
         </div>
-        <h3 className="text-lg font-medium text-gray-300">
-          {isDragging ? 'Drop your image here' : 'Drag & drop your image here'}
-        </h3>
-        <p className="text-sm text-gray-500">
-          or <span className="text-app-purple">browse files</span>
-        </p>
-        <p className="text-xs text-gray-600 pt-2">
-          Supports: JPEG, PNG, WebP
-        </p>
+        <div>
+          <h3 className="text-lg font-medium">
+            {isDragging ? 'Drop your image here' : 'Drag & drop your image here'}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            or <span className="text-primary cursor-pointer">browse files</span>
+          </p>
+        </div>
+        <div className="flex gap-2 items-center justify-center mt-4 text-xs text-muted-foreground">
+          <span className="px-2 py-1 rounded-full bg-secondary">JPEG</span>
+          <span className="px-2 py-1 rounded-full bg-secondary">PNG</span>
+          <span className="px-2 py-1 rounded-full bg-secondary">WebP</span>
+        </div>
       </div>
     </div>
   );

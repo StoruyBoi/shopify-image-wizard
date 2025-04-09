@@ -1,17 +1,23 @@
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 const Header = () => {
   return (
-    <header className="border-b border-gray-800 bg-gradient-to-r from-gray-900 to-gray-800 py-4">
+    <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-50 py-4">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-app-purple" />
-          <h1 className="text-xl font-bold text-white">Shopify Image Wizard</h1>
+          <div className="p-1.5 rounded-full bg-gradient-to-br from-app-purple to-app-blue flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-foreground">Shopify Image Wizard</h1>
         </div>
-        <div className="text-sm text-gray-400">
-          Powered by Claude 3.7
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Powered by Claude 3.7
+          </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import Header from '@/components/Header';
@@ -59,20 +60,20 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-app-dark text-white flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center gap-2 mb-3 px-4 py-2 rounded-full bg-app-purple/10 text-app-purple">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center gap-2 mb-3 px-4 py-2 rounded-full bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
               <span className="text-sm font-medium">AI-Powered Shopify Image Generator</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-app-purple to-app-blue">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-app-purple to-app-blue">
               Transform Your Images into Shopify Assets
             </h1>
-            <p className="text-gray-400 max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               Upload an image and let our AI transform it into professional Shopify-ready assets.
               Choose from product images, sliders, banners and more.
             </p>
@@ -82,9 +83,9 @@ const Index = () => {
             <div className="space-y-8">
               {!uploadedImage ? (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-200 mb-4">
+                  <h2 className="text-xl font-semibold mb-4">
                     <span className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-app-purple flex items-center justify-center text-white text-sm">1</span>
+                      <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">1</span>
                       Upload Your Image
                     </span>
                   </h2>
@@ -93,26 +94,26 @@ const Index = () => {
               ) : (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-200">
+                    <h2 className="text-xl font-semibold">
                       <span className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-app-purple flex items-center justify-center text-white text-sm">1</span>
+                        <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">1</span>
                         Uploaded Image
                       </span>
                     </h2>
                     <button 
                       onClick={() => setUploadedImage(null)}
-                      className="text-sm text-gray-400 hover:text-white"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Change
                     </button>
                   </div>
-                  <div className="rounded-lg border border-gray-700 p-4 bg-gray-800/50">
+                  <div className="rounded-lg border p-4 glass">
                     <img 
                       src={uploadedImage.previewUrl} 
                       alt="Uploaded" 
                       className="w-full h-auto rounded-md" 
                     />
-                    <p className="mt-2 text-sm text-gray-500 truncate">
+                    <p className="mt-2 text-sm text-muted-foreground truncate">
                       {uploadedImage.file.name}
                     </p>
                   </div>
@@ -122,9 +123,9 @@ const Index = () => {
               {uploadedImage && (
                 <>
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-200 mb-4">
+                    <h2 className="text-xl font-semibold mb-4">
                       <span className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-app-purple flex items-center justify-center text-white text-sm">2</span>
+                        <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">2</span>
                         Choose Options
                       </span>
                     </h2>
@@ -135,9 +136,9 @@ const Index = () => {
                   </div>
 
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-200 mb-4">
+                    <h2 className="text-xl font-semibold mb-4">
                       <span className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-app-purple flex items-center justify-center text-white text-sm">3</span>
+                        <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">3</span>
                         Additional Details
                       </span>
                     </h2>
@@ -151,9 +152,9 @@ const Index = () => {
             </div>
 
             <div>
-              <div className="sticky top-8">
-                <h2 className="text-xl font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                  <Wand2 className="h-5 w-5 text-app-purple" />
+              <div className="sticky top-24">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Wand2 className="h-5 w-5 text-primary" />
                   Generated Output
                 </h2>
                 <PreviewArea 
@@ -162,22 +163,22 @@ const Index = () => {
                 />
 
                 {!uploadedImage && !generatedImageUrl && (
-                  <div className="rounded-lg border border-gray-700 bg-gray-800/30 p-8 text-center">
+                  <div className="rounded-lg border p-8 text-center glass">
                     <div className="flex justify-center mb-4">
-                      <div className="p-4 rounded-full bg-gray-700/50">
-                        <Sparkles className="h-8 w-8 text-gray-500" />
+                      <div className="p-4 rounded-full bg-secondary">
+                        <Sparkles className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </div>
-                    <h3 className="text-lg font-medium text-gray-400 mb-2">No Preview Yet</h3>
-                    <p className="text-gray-500 text-sm">
+                    <h3 className="text-lg font-medium mb-2">No Preview Yet</h3>
+                    <p className="text-muted-foreground text-sm">
                       Upload an image and configure your options to generate a Shopify asset
                     </p>
                   </div>
                 )}
 
-                <div className="mt-8 p-4 rounded-lg border border-gray-700 bg-gray-800/30">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">About Claude 3.7 Integration</h3>
-                  <p className="text-xs text-gray-500">
+                <div className="mt-8 p-4 rounded-lg border glass">
+                  <h3 className="text-sm font-medium mb-2">About Claude 3.7 Integration</h3>
+                  <p className="text-xs text-muted-foreground">
                     This application uses Claude 3.7 AI to generate high-quality Shopify assets. 
                     The AI model understands e-commerce context and optimizes your images for 
                     maximum conversion potential.
@@ -189,9 +190,9 @@ const Index = () => {
         </div>
       </main>
       
-      <footer className="border-t border-gray-800 py-6">
+      <footer className="border-t border-border py-6 mt-12">
         <div className="container mx-auto px-4">
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-muted-foreground">
             Shopify Image Wizard © {new Date().getFullYear()} • Powered by Claude 3.7
           </p>
         </div>
