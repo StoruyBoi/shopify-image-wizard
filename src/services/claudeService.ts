@@ -1,3 +1,4 @@
+
 import { ImageOptions } from '@/components/OptionsSelector';
 
 interface GenerateCodeResponse {
@@ -22,7 +23,7 @@ export async function generateCodeFromImage(
     
     // Fallback to simulated response if API call fails
     try {
-      const response = await callClaudeAPI(base64Image, options, additionalDetails);
+      const response = await callClaudeAPI(base64Image, imageFile.type, options, additionalDetails);
       return response;
     } catch (apiError) {
       console.error("Error calling Claude API:", apiError);
@@ -39,7 +40,8 @@ export async function generateCodeFromImage(
 
 // Call the actual Claude API with the image
 async function callClaudeAPI(
-  base64Image: string, 
+  base64Image: string,
+  fileType: string, 
   options: ImageOptions,
   additionalDetails: any
 ): Promise<GenerateCodeResponse> {
@@ -69,7 +71,7 @@ async function callClaudeAPI(
                 type: "image",
                 source: {
                   type: "base64",
-                  media_type: getMediaType(imageFile?.type || 'image/jpeg'),
+                  media_type: getMediaType(fileType),
                   data: base64Image
                 }
               }
