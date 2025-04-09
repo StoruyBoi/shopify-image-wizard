@@ -10,27 +10,344 @@ const CLAUDE_API_KEY = "sk-ant-api03-P7HhhN_yL9yNoD8oPa7bJJizqko-nwjiKBVPHWAhvz3
 
 // Store your custom prompt template
 let customPromptTemplate = `
-  I need you to analyze this image of a website section and generate Shopify Liquid code that recreates it.
-  
-  Section type: {{purpose}}
-  Features to include:
-  {{showPrice}}
-  {{showRating}}
-  {{includeText}}
-  
-  Additional details: {{additionalDetails}}
-  
-  Please provide your response in the following format:
-  1. First, generate the HTML/Liquid template code for the section
-  2. Then, generate the Shopify schema code that would be used for the section
-  
-  Format your response as a JSON object with two properties:
-  {
-    "code": "HTML/Liquid template code here",
-    "shopifyLiquid": "Shopify schema code here"
+ <section class="custom-multi-blocks" style="background-color: {{ section.settings.background_color }}; padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;">
+  <div class="custom-multi-blocks-container page-width" >
+    {% for block in section.blocks %}
+      <a 
+        class="custom-multi-block" 
+        href="{{ block.settings.block_link }}" 
+        target="{{ block.settings.link_target }}" 
+        style="
+          {% if block.settings.border_enabled %}
+            border: 3px solid {{ block.settings.border_color }};
+          {% endif %}
+        ">
+        {% if block.settings.block_background_type == 'color' %}
+          <div class="block-content" style="background-color: {{ block.settings.block_background_color }};">
+        {% else %}
+          <div class="block-content" style="background-image: url({{ block.settings.block_background_image | img_url: 'master' }}); background-size: cover; background-position: center;">
+        {% endif %}
+            <div class="overlay" style="background-color: {{ block.settings.overlay_color }}; opacity: {{ block.settings.overlay_opacity }};"></div>
+            {% if block.settings.show_arrow %}
+              <div class="arrow-svg">
+                  <svg viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="#ffffff" stroke-width="0.672" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+              </div>
+            {% else %}
+              <span class="block-text" style="color: {{ block.settings.text_color }};">{{ block.settings.block_text }}</span>
+            {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+.custom-multi-blocks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.custom-multi-blocks-container {
+    display: grid;
+    gap: 40px;
+    justify-content: center;
+    align-items: center;
+    grid-template-columns: repeat(auto-fit,minmax(200px, 1fr));
+    flex-wrap: wrap;
+}
+  .custom-multi-block .block-content .arrow-svg svg {
+    width: 100px;
+}
+
+.custom-multi-block {
+    aspect-ratio: 3 / 2;
+    border-radius: 50px;
+    width: 300px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    display: flex;
+    height: 160px;
+    text-decoration: none;
+}
+
+.custom-multi-block .block-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  border-radius: 20px;
+  position: relative;
+}
+.custom-multi-block .block-content .block-text {
+    font-size: 18px;
+    font-weight: 100;
+    z-index: 2;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+.custom-multi-block .block-content .overlay {
+  position: absolute;
+  top: 0;
+  display:block;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  border-radius: 20px;
+}
+
+.custom-multi-block .block-content .arrow-svg {
+  z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .custom-multi-block {
+    max-width: calc(50% - 10px); /* Adjust for smaller screens */
   }
-  
-  IMPORTANT: Make sure your response is ONLY the JSON object with no additional text.
+}
+
+@media (max-width: 480px) {
+  .custom-multi-block {
+    max-width: 100%;
+  }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Custom Multi-Blocks",
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Section Background Color",
+      "default": "#f9f4ee"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding Top",
+      "default": 50,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding Bottom",
+      "default": 50,
+      "min": 0,
+      "max": 200,
+      "step": 2
+    }
+  ],
+  "blocks": [
+    {
+      "type": "block",
+      "name": "Block",
+      "settings": [
+        {
+          "type": "select",
+          "id": "block_background_type",
+          "label": "Background Type",
+          "options": [
+            {
+              "value": "color",
+              "label": "Background Color"
+            },
+            {
+              "value": "image",
+              "label": "Background Image"
+            }
+          ],
+          "default": "color"
+        },
+        {
+          "type": "color",
+          "id": "block_background_color",
+          "label": "Background Color",
+          "default": "#8c5b38",
+          "info": "This will be used if 'Background Color' is selected."
+        },
+        {
+          "type": "image_picker",
+          "id": "block_background_image",
+          "label": "Background Image",
+          "info": "This will be used if 'Background Image' is selected."
+        },
+        {
+          "type": "color",
+          "id": "overlay_color",
+          "label": "Overlay Color",
+          "default": "#000000",
+          "info": "Color of the overlay."
+        },
+        {
+          "type": "range",
+          "id": "overlay_opacity",
+          "label": "Overlay Opacity",
+          "default": 0.5,
+          "min": 0,
+          "max": 1,
+          "step": 0.1
+        },
+        {
+          "type": "text",
+          "id": "block_text",
+          "label": "Block Text",
+          "default": "Sample Text"
+        },
+        {
+          "type": "color",
+          "id": "text_color",
+          "label": "Text Color",
+          "default": "#ffffff",
+          "info": "Set the color of the block text."
+        },
+        {
+          "type": "checkbox",
+          "id": "show_arrow",
+          "label": "Show Arrow Instead of Text",
+          "default": false
+        },
+        {
+          "type": "checkbox",
+          "id": "border_enabled",
+          "label": "Enable Border",
+          "default": false
+        },
+        {
+          "type": "color",
+          "id": "border_color",
+          "label": "Border Color",
+          "default": "#000000",
+          "info": "This will be used if 'Enable Border' is checked."
+        },
+        {
+          "type": "url",
+          "id": "block_link",
+          "label": "Block Link"
+        },
+        {
+          "type": "select",
+          "id": "link_target",
+          "label": "Link Target",
+          "options": [
+            {
+              "value": "_self",
+              "label": "Same Tab"
+            },
+            {
+              "value": "_blank",
+              "label": "New Tab"
+            }
+          ],
+          "default": "_self"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Multi Blocks",
+      "category": "Custom Sections"
+    }
+  ]
+}
+{% endschema %} 
+
+Sese these structre 
+
+
+
+
+
+ this si my writn style of code for shopify sectinn so just learn it the new section when ever i told you i wan basic stucter like i want pading top bottom with schem and color shcme where uer can select defalut color sechema  <section class="custom-multi-blocks" style="background-color: {{ section.settings.background_color }}; padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;">
+  <div class="custom-multi-blocks-container page-width" >
+    </div>
+
+</section>  this is mian stuct and everly think is inside follow this rule and also rember Invalid schema: name is too long (max 25 characters) this  and als make sure when ever i ask you about creating the section use differnt class i mwan not smake unique so tha no change of css conflicts tell me when you ready i will givnig you new section different section ok and also rember this Invalid schema: setting with id="video_file" type is invalid
+Invalid schema: setting with id="video_file" 'id' is not a valid attributeInvalid schema: setting with id="video_file" 'label' is not a valid attribute
+Invalid schema: setting with id="video_file" 'accept' is not a valid attribute      {
+      "type": "video",
+      "id": "video",
+      "label": "Video",
+      "default": "shopify://video/example.mp4"
+    }, i want to tell just rember dont use defalut ok       "default": "shopify://video/example.mp4"
+  <img src="{{ section.settings.image | img_url: 'master'}}" alt="Image description"  />     {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "Select an image to display below the text."
+    } this how image structure would be
+other point 
+{% if section.settings.video != blank %}
+  <video src="{{ section.settings.video.sources[1].url }}" loop muted playsinline autoplay style="width: 100%; display: block; border-radius: 10px;"></video>
+{% endif %}
+
+also make in mind always use parent css class for good practice and also all text should be demo like loreum ipsum got it
+Prompt for Shopify Section Creation:
+
+"I want you to create a Shopify section following a specific structure and rules:
+
+Main Structure:
+
+The section must follow this base structure:
+html
+Copy
+Edit
+<section class="unique-class-name" style="background-color: {{ section.settings.background_color }}; padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;">
+  <div class="unique-container page-width">
+  </div>
+</section>
+Every element must be inside this structure.
+Schema Requirements:
+
+Include padding top/bottom controls in the schema.
+Allow the user to select a background color.
+Ensure the name in the schema does not exceed 25 characters (to avoid errors).
+Do not use "default" values for videos (e.g., "default": "shopify://video/example.mp4" is not allowed).
+Use proper image structure:
+html
+Copy
+Edit
+<img src="{{ section.settings.image | img_url: 'master'}}" alt="Image description" />
+For videos, use this structure:
+html
+Copy
+Edit
+{% if section.settings.video != blank %}
+  <video src="{{ section.settings.video.sources[1].url }}" loop muted playsinline autoplay style="width: 100%; display: block; border-radius: 10px;"></video>
+{% endif %}
+Always use a parent CSS class for styling consistency.
+CSS Guidelines:
+
+Use unique class names for each section to avoid CSS conflicts.
+All text should be placeholder content (e.g., Lorem Ipsum).
+Let me know when you are ready for a new section, and I will provide the specific details!"
+
+The output structure will be:
+html
+css
+script 
+schemass
+
+
+This prompt ensures that the Shopify sections you request will always follow your exact specifications. Let me know when you're ready for your next section, and I’ll create one accordingly! 🚀
+
+ 
 `;
 
 export function setCustomPrompt(prompt: string) {
