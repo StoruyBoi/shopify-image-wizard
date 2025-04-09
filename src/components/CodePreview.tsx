@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, Copy, Code as CodeIcon } from 'lucide-react';
+import { Check, Copy, Code as CodeIcon, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +31,23 @@ const CodePreview: React.FC<CodePreviewProps> = ({
     });
     
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const handleDownload = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shopify-${language}-code.liquid`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Code downloaded",
+      description: "You can now use it in your Shopify theme editor",
+    });
   };
 
   // Add syntax highlighting effect
@@ -65,24 +82,35 @@ const CodePreview: React.FC<CodePreviewProps> = ({
           <CodeIcon className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-medium text-sm">{title}</h3>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleCopy}
-          className="h-8 gap-1.5 text-xs"
-        >
-          {copied ? (
-            <>
-              <Check className="h-3.5 w-3.5" />
-              <span>Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="h-3.5 w-3.5" />
-              <span>Copy</span>
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleDownload}
+            className="h-8 gap-1.5 text-xs"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Download</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleCopy}
+            className="h-8 gap-1.5 text-xs"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" />
+                <span>Copy</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       
       <div className="p-4 bg-muted/10 relative">

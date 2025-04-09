@@ -1,4 +1,3 @@
-
 import { ImageOptions } from '@/components/OptionsSelector';
 
 interface GenerateCodeResponse {
@@ -8,6 +7,44 @@ interface GenerateCodeResponse {
 
 // API key for Anthropic/Claude - Note: In production, this should be handled by a backend service
 const CLAUDE_API_KEY = "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";
+
+// Store your custom prompt template
+let customPromptTemplate = `
+  I need you to analyze this image of a website section and generate Shopify Liquid code that recreates it.
+  
+  Section type: {{purpose}}
+  Features to include:
+  {{showPrice}}
+  {{showRating}}
+  {{includeText}}
+  
+  Additional details: {{additionalDetails}}
+  
+  Please provide your response in the following format:
+  1. First, generate the HTML/Liquid template code for the section
+  2. Then, generate the Shopify schema code that would be used for the section
+  
+  Format your response as a JSON object with two properties:
+  {
+    "code": "HTML/Liquid template code here",
+    "shopifyLiquid": "Shopify schema code here"
+  }
+  
+  IMPORTANT: Make sure your response is ONLY the JSON object with no additional text.
+`;
+
+export function setCustomPrompt(prompt: string) {
+  if (prompt && prompt.trim()) {
+    customPromptTemplate = prompt;
+    console.log("Custom prompt template set successfully");
+    return true;
+  }
+  return false;
+}
+
+export function getCustomPrompt(): string {
+  return customPromptTemplate;
+}
 
 export async function generateCodeFromImage(
   imageFile: File,
@@ -102,29 +139,15 @@ async function callClaudeAPI(
 function createPromptInstructions(options: ImageOptions, additionalDetails: any): string {
   const { purpose, showPrice, showRating, includeText } = options;
   
-  return `
-    I need you to analyze this image of a website section and generate Shopify Liquid code that recreates it.
-    
-    Section type: ${purpose}
-    Features to include:
-    ${showPrice ? '- Show prices' : '- Do not show prices'}
-    ${showRating ? '- Show ratings' : '- Do not show ratings'}
-    ${includeText ? '- Include text content' : '- Minimize text content'}
-    
-    Additional details: ${JSON.stringify(additionalDetails)}
-    
-    Please provide your response in the following format:
-    1. First, generate the HTML/Liquid template code for the section
-    2. Then, generate the Shopify schema code that would be used for the section
-    
-    Format your response as a JSON object with two properties:
-    {
-      "code": "HTML/Liquid template code here",
-      "shopifyLiquid": "Shopify schema code here"
-    }
-    
-    IMPORTANT: Make sure your response is ONLY the JSON object with no additional text.
-  `;
+  // Use the template and replace placeholders
+  let prompt = customPromptTemplate
+    .replace("{{purpose}}", purpose)
+    .replace("{{showPrice}}", showPrice ? '- Show prices' : '- Do not show prices')
+    .replace("{{showRating}}", showRating ? '- Show ratings' : '- Do not show ratings')
+    .replace("{{includeText}}", includeText ? '- Include text content' : '- Minimize text content')
+    .replace("{{additionalDetails}}", JSON.stringify(additionalDetails));
+  
+  return prompt;
 }
 
 // Helper function to get the media type
