@@ -7,6 +7,7 @@ import OptionsSelector, { ImageOptions, ImagePurpose } from '@/components/Option
 import InputForm from '@/components/InputForm';
 import PreviewArea from '@/components/PreviewArea';
 import { Wand2, Sparkles } from 'lucide-react';
+import { generateCodeFromImage } from '@/services/claudeService';
 
 const Index = () => {
   const { toast } = useToast();
@@ -19,10 +20,12 @@ const Index = () => {
   });
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<{ code: string; shopifyLiquid: string } | null>(null);
 
   const handleImageUpload = (file: File, previewUrl: string) => {
     setUploadedImage({ file, previewUrl });
     setGeneratedImageUrl(null);
+    setGeneratedCode(null);
     toast({
       title: "Image uploaded successfully",
       description: `File: ${file.name}`,
@@ -33,7 +36,7 @@ const Index = () => {
     setSelectedOptions(options);
   };
 
-  const handleFormSubmit = (formData: any) => {
+  const handleFormSubmit = async (formData: any) => {
     if (!uploadedImage) {
       toast({
         title: "No image uploaded",
@@ -44,19 +47,34 @@ const Index = () => {
     }
 
     setIsProcessing(true);
+    setGeneratedCode(null);
     
-    // Simulate API processing time
-    setTimeout(() => {
-      // For now, we'll just use the original image as a placeholder
-      // Later, we'll replace this with the actual Claude 3.7 API integration
+    try {
+      // Call Claude API to generate code
+      const result = await generateCodeFromImage(
+        uploadedImage.file,
+        selectedOptions,
+        formData
+      );
+      
+      // Update UI with results
       setGeneratedImageUrl(uploadedImage.previewUrl);
-      setIsProcessing(false);
+      setGeneratedCode(result);
       
       toast({
-        title: "Image generated successfully",
-        description: "Your Shopify image has been created",
+        title: "Code generated successfully",
+        description: "Your Shopify Liquid code has been created",
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Error generating code:", error);
+      toast({
+        title: "Generation failed",
+        description: "There was an error generating your code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -68,14 +86,14 @@ const Index = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center gap-2 mb-3 px-4 py-2 rounded-full bg-primary/10 text-primary">
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">AI-Powered Shopify Image Generator</span>
+              <span className="text-sm font-medium">AI-Powered Shopify Code Generator</span>
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-app-purple to-app-blue">
-              Transform Your Images into Shopify Assets
+              Transform Images into Shopify Liquid Code
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Upload an image and let our AI transform it into professional Shopify-ready assets.
-              Choose from product images, sliders, banners and more.
+              Upload an image of a website section and let our AI generate Shopify Liquid code to recreate it.
+              Choose from product listings, sliders, banners and more.
             </p>
           </div>
 
@@ -101,7 +119,10 @@ const Index = () => {
                       </span>
                     </h2>
                     <button 
-                      onClick={() => setUploadedImage(null)}
+                      onClick={() => {
+                        setUploadedImage(null);
+                        setGeneratedCode(null);
+                      }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Change
@@ -126,7 +147,7 @@ const Index = () => {
                     <h2 className="text-xl font-semibold mb-4">
                       <span className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">2</span>
-                        Choose Options
+                        Choose Section Type
                       </span>
                     </h2>
                     <OptionsSelector 
@@ -160,6 +181,7 @@ const Index = () => {
                 <PreviewArea 
                   previewUrl={generatedImageUrl} 
                   isProcessing={isProcessing} 
+                  generatedCode={generatedCode}
                 />
 
                 {!uploadedImage && !generatedImageUrl && (
@@ -171,7 +193,7 @@ const Index = () => {
                     </div>
                     <h3 className="text-lg font-medium mb-2">No Preview Yet</h3>
                     <p className="text-muted-foreground text-sm">
-                      Upload an image and configure your options to generate a Shopify asset
+                      Upload an image and configure your options to generate Shopify Liquid code
                     </p>
                   </div>
                 )}
@@ -179,9 +201,9 @@ const Index = () => {
                 <div className="mt-8 p-4 rounded-lg border glass">
                   <h3 className="text-sm font-medium mb-2">About Claude 3.7 Integration</h3>
                   <p className="text-xs text-muted-foreground">
-                    This application uses Claude 3.7 AI to generate high-quality Shopify assets. 
-                    The AI model understands e-commerce context and optimizes your images for 
-                    maximum conversion potential.
+                    This application uses Claude 3.7 AI to transform images into Shopify Liquid code.
+                    The AI analyzes your image and generates code that recreates the visual elements
+                    as a Shopify section that you can use in your theme.
                   </p>
                 </div>
               </div>
@@ -193,7 +215,7 @@ const Index = () => {
       <footer className="border-t border-border py-6 mt-12">
         <div className="container mx-auto px-4">
           <p className="text-center text-sm text-muted-foreground">
-            Shopify Image Wizard © {new Date().getFullYear()} • Powered by Claude 3.7
+            Shopify Code Generator © {new Date().getFullYear()} • Powered by Claude 3.7
           </p>
         </div>
       </footer>
