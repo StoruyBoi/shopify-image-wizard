@@ -38,7 +38,20 @@ const CodePreview: React.FC<CodePreviewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `shopify-${language}-code.liquid`;
+    
+    // Determine file extension based on content
+    let extension = 'liquid';
+    if (code.includes('{% schema %}')) {
+      extension = 'liquid';
+    } else if (code.includes('<style>')) {
+      extension = 'html';
+    }
+    
+    // Generate a more descriptive filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const sectionType = title.toLowerCase().replace(/\s+/g, '-');
+    a.download = `shopify-${sectionType}-${timestamp}.${extension}`;
+    
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -50,7 +63,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
     });
   };
 
-  // Add syntax highlighting effect
+  // Enhanced syntax highlighting
   useEffect(() => {
     if (codeRef.current) {
       // Escape HTML entities first
@@ -65,13 +78,79 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       
       const escapedCode = escapeHtml(code);
       
-      // Simple syntax highlighting for Liquid
-      const highlightedCode = escapedCode
-        .replace(/({%.*?%})/g, '<span class="text-blue-400">$1</span>')
-        .replace(/({{.*?}})/g, '<span class="text-green-400">$1</span>')
-        .replace(/(&lt;.*?&gt;)/g, '<span class="text-purple-400">$1</span>');
+      // More comprehensive syntax highlighting for Shopify Liquid
+      let highlightedCode = escapedCode
+        // Liquid tags
+        .replace(/({%.*?%})/g, '<span class="text-blue-500 font-semibold">$1</span>')
+        // Liquid variables
+        .replace(/({{.*?}})/g, '<span class="text-green-500 font-semibold">$1</span>')
+        // HTML tags
+        .replace(/(&lt;[\/]?[a-zA-Z0-9\-]+)(\s.*?)?(&gt;)/g, '<span class="text-purple-500">$1$2$3</span>')
+        // HTML attributes
+        .replace(/(\s+[a-zA-Z0-9\-_]+)=(&quot;.*?&quot;)/g, '<span class="text-yellow-500">$1</span>=<span class="text-orange-400">$2</span>')
+        // CSS properties
+        .replace(/([a-zA-Z\-]+:)(.*?)(;)/g, '<span class="text-pink-400">$1</span><span class="text-blue-300">$2</span><span class="text-pink-400">$3</span>')
+        // Comments
+        .replace(/(&lt;!--.*?--&gt;)/g, '<span class="text-gray-500">$1</span>')
+        // JSON keys in schema
+        .replace(/(&quot;[a-zA-Z0-9_\-]+&quot;)(\s*:)/g, '<span class="text-yellow-400">$1</span>$2');
+      
+      // Apply schema-specific highlighting
+      if (highlightedCode.includes('schema')) {
+        highlightedCode = highlightedCode
+          .replace(/({% schema %})/, '<span class="text-red-500 font-bold">$1</span>')
+          .replace(/({% endschema %})/, '<span class="text-red-500 font-bold">$1</span>');
+      }
       
       codeRef.current.innerHTML = highlightedCode;
+      
+      // Add line numbers
+      const addLineNumbers = () => {
+        if (!codeRef.current) return;
+        
+        const codeLines = code.split('\n');
+        if (codeLines.length > 5) {
+          const linesContainer = document.createElement('div');
+          linesContainer.className = 'line-numbers';
+          linesContainer.style.position = 'absolute';
+          linesContainer.style.left = '0';
+          linesContainer.style.top = '0';
+          linesContainer.style.padding = '0.5rem 0';
+          linesContainer.style.borderRight = '1px solid rgba(100, 100, 100, 0.2)';
+          linesContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+          linesContainer.style.textAlign = 'right';
+          linesContainer.style.userSelect = 'none';
+          linesContainer.style.color = 'rgba(100, 100, 100, 0.6)';
+          linesContainer.style.fontSize = 'inherit';
+          linesContainer.style.fontFamily = 'monospace';
+          
+          for (let i = 1; i <= codeLines.length; i++) {
+            const lineNumber = document.createElement('div');
+            lineNumber.textContent = String(i);
+            lineNumber.style.padding = '0 0.5rem';
+            linesContainer.appendChild(lineNumber);
+          }
+          
+          const parentContainer = codeRef.current.parentElement;
+          if (parentContainer) {
+            parentContainer.style.position = 'relative';
+            parentContainer.style.paddingLeft = '2.5rem';
+            parentContainer.appendChild(linesContainer);
+          }
+        }
+      };
+      
+      // Only add line numbers for longer code blocks
+      if (code.split('\n').length > 5) {
+        // Remove existing line numbers if any
+        const existingLineNumbers = codeRef.current.parentElement?.querySelector('.line-numbers');
+        if (existingLineNumbers) {
+          existingLineNumbers.remove();
+        }
+        
+        // Add new line numbers
+        setTimeout(addLineNumbers, 0);
+      }
     }
   }, [code, codeRef]);
 
@@ -116,7 +195,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       <div className="p-4 bg-muted/10 relative">
         <pre 
           ref={codeRef}
-          className="text-xs md:text-sm overflow-x-auto max-h-96 p-2 rounded bg-background/50 border"
+          className="text-xs md:text-sm overflow-x-auto max-h-[400px] p-4 rounded bg-background/80 border font-mono"
         >
           <code>{code}</code>
         </pre>

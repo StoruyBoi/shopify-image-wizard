@@ -13,10 +13,7 @@ const Index = () => {
   const { toast } = useToast();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<ImageOptions>({
-    purpose: 'product',
-    showPrice: false,
-    showRating: false,
-    includeText: false,
+    purpose: 'product'
   });
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -160,7 +157,7 @@ const Index = () => {
                     <h2 className="text-xl font-semibold mb-4">
                       <span className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">3</span>
-                        Additional Details
+                        Requirements
                       </span>
                     </h2>
                     <InputForm 

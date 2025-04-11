@@ -5,9 +5,6 @@ import { Check } from 'lucide-react';
 export type ImagePurpose = 'product' | 'slider' | 'banner' | 'collection' | 'announcement' | 'footer' | 'header' | 'image-with-text' | 'multicolumn';
 export type ImageOptions = {
   purpose: ImagePurpose;
-  showRating?: boolean;
-  showPrice?: boolean;
-  includeText?: boolean;
 };
 
 const options: Array<{
@@ -82,14 +79,7 @@ const OptionsSelector: React.FC<OptionsSelectorProps> = ({
   onOptionsChange 
 }) => {
   const handlePurposeSelect = (purpose: ImagePurpose) => {
-    onOptionsChange({ ...selectedOptions, purpose });
-  };
-
-  const handleToggleOption = (option: keyof Omit<ImageOptions, 'purpose'>) => {
-    onOptionsChange({ 
-      ...selectedOptions, 
-      [option]: !selectedOptions[option] 
-    });
+    onOptionsChange({ purpose });
   };
 
   return (
@@ -122,50 +112,6 @@ const OptionsSelector: React.FC<OptionsSelectorProps> = ({
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-base font-medium mb-3">Additional Options</h3>
-        <div className="space-y-2">
-          <div 
-            onClick={() => handleToggleOption('showPrice')}
-            className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between
-              ${selectedOptions.showPrice 
-                ? 'border-app-purple bg-app-purple/10' 
-                : 'border-border bg-card/50 hover:border-muted-foreground/50'
-              }
-            `}
-          >
-            <span>Show Price</span>
-            {selectedOptions.showPrice && <Check className="h-4 w-4 text-app-purple" />}
-          </div>
-          
-          <div 
-            onClick={() => handleToggleOption('showRating')}
-            className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between
-              ${selectedOptions.showRating 
-                ? 'border-app-purple bg-app-purple/10' 
-                : 'border-border bg-card/50 hover:border-muted-foreground/50'
-              }
-            `}
-          >
-            <span>Show Rating</span>
-            {selectedOptions.showRating && <Check className="h-4 w-4 text-app-purple" />}
-          </div>
-          
-          <div 
-            onClick={() => handleToggleOption('includeText')}
-            className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between
-              ${selectedOptions.includeText 
-                ? 'border-app-purple bg-app-purple/10' 
-                : 'border-border bg-card/50 hover:border-muted-foreground/50'
-              }
-            `}
-          >
-            <span>Include Text Overlay</span>
-            {selectedOptions.includeText && <Check className="h-4 w-4 text-app-purple" />}
-          </div>
         </div>
       </div>
     </div>
