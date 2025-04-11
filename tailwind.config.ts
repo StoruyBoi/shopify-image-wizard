@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,10 +19,7 @@ export default {
 		},
 		extend: {
 			colors: {
-				border: {
-					DEFAULT: 'hsl(var(--border))',
-					light: 'hsl(var(--border-light))'
-				},
+				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
@@ -55,12 +51,6 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
-				},
-				app: {
-					purple: '#6366f1',
-					blue: '#3b82f6',
-					dark: '#111827',
-					light: '#f9fafb'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -94,26 +84,11 @@ export default {
 					to: {
 						height: '0'
 					}
-				},
-				'pulse-slow': {
-					'0%, 100%': { opacity: 1 },
-					'50%': { opacity: 0.8 },
-				},
-				'float': {
-					'0%, 100%': { transform: 'translateY(0)' },
-					'50%': { transform: 'translateY(-10px)' },
-				},
-				'shimmer': {
-					'0%': { backgroundPosition: '-200% 0' },
-					'100%': { backgroundPosition: '200% 0' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-slow': 'pulse-slow 3s infinite',
-				'float': 'float 6s ease-in-out infinite',
-				'shimmer': 'shimmer 2s linear infinite',
+				'accordion-up': 'accordion-up 0.2s ease-out'
 			}
 		}
 	},
