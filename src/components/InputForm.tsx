@@ -6,104 +6,43 @@ import { Input } from './ui/input';
 
 interface InputFormProps {
   selectedOptions: ImageOptions;
-  onSubmit: (formData: FormData) => void;
-}
-
-interface FormData {
-  title?: string;
-  description?: string;
-  price?: string;
-  callToAction?: string;
+  onSubmit: (requirements: string) => void;
 }
 
 const InputForm: React.FC<InputFormProps> = ({ selectedOptions, onSubmit }) => {
-  const [formData, setFormData] = React.useState<FormData>({
-    title: '',
-    description: '',
-    price: '',
-    callToAction: '',
-  });
+  const [requirements, setRequirements] = React.useState<string>('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setRequirements(e.target.value);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit(requirements);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-5 glass">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-1">
-          Title
+        <label htmlFor="requirements" className="block text-sm font-medium mb-1">
+          Requirements
         </label>
-        <Input
-          id="title"
-          name="title"
-          value={formData.title}
+        <textarea
+          id="requirements"
+          name="requirements"
+          value={requirements}
           onChange={handleChange}
-          className="w-full bg-background"
-          placeholder="Enter title text"
+          rows={5}
+          className="w-full p-2 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base resize-none"
+          placeholder="Enter specific requirements for your section (optional)"
         />
       </div>
-
-      {selectedOptions.purpose !== 'product' && (
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium mb-1">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            className="w-full p-2 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base resize-none"
-            placeholder="Enter description text"
-          />
-        </div>
-      )}
-
-      {selectedOptions.showPrice && (
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium mb-1">
-            Price
-          </label>
-          <Input
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            className="w-full bg-background"
-            placeholder="e.g. $99.99"
-          />
-        </div>
-      )}
-
-      {(selectedOptions.purpose === 'banner' || selectedOptions.purpose === 'slider') && (
-        <div>
-          <label htmlFor="callToAction" className="block text-sm font-medium mb-1">
-            Call-to-Action Text
-          </label>
-          <Input
-            id="callToAction"
-            name="callToAction"
-            value={formData.callToAction}
-            onChange={handleChange}
-            className="w-full bg-background"
-            placeholder="e.g. Shop Now"
-          />
-        </div>
-      )}
 
       <Button
         type="submit"
         className="w-full py-6 bg-gradient-to-r from-app-purple to-app-blue hover:opacity-90 transition-opacity"
       >
-        Generate Image
+        Generate Shopify Code
       </Button>
     </form>
   );

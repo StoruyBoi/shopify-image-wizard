@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
-import OptionsSelector, { ImageOptions, ImagePurpose } from '@/components/OptionsSelector';
+import OptionsSelector, { ImageOptions } from '@/components/OptionsSelector';
 import InputForm from '@/components/InputForm';
 import PreviewArea from '@/components/PreviewArea';
 import { Wand2, Sparkles } from 'lucide-react';
@@ -13,10 +13,7 @@ const Index = () => {
   const { toast } = useToast();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<ImageOptions>({
-    purpose: 'product',
-    showPrice: false,
-    showRating: false,
-    includeText: false,
+    purpose: 'product'
   });
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -36,7 +33,7 @@ const Index = () => {
     setSelectedOptions(options);
   };
 
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (requirements: string) => {
     if (!uploadedImage) {
       toast({
         title: "No image uploaded",
@@ -54,7 +51,7 @@ const Index = () => {
       const result = await generateCodeFromImage(
         uploadedImage.file,
         selectedOptions,
-        formData
+        requirements
       );
       
       // Update UI with results
@@ -160,7 +157,7 @@ const Index = () => {
                     <h2 className="text-xl font-semibold mb-4">
                       <span className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-sm">3</span>
-                        Additional Details
+                        Section Requirements
                       </span>
                     </h2>
                     <InputForm 
