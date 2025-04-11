@@ -23,6 +23,7 @@ export async function generateCodeFromImage(
     
     console.log("Sending image to Claude API...");
     console.log("Selected options:", options);
+    console.log("Requirements:", requirements);
     
     // Fallback to simulated response if API call fails
     try {
@@ -32,8 +33,13 @@ export async function generateCodeFromImage(
       // Call the Claude API
       const response = await callClaudeAPI(base64Image, imageFile.type, promptInstructions);
       
+      console.log("Claude API response received", response);
+      
       // Parse the response
-      return parseClaudeResponse(response);
+      const parsedResponse = parseClaudeResponse(response);
+      console.log("Parsed response:", parsedResponse);
+      
+      return parsedResponse;
     } catch (apiError) {
       console.error("Error calling Claude API:", apiError);
       console.log("Falling back to simulated response");
