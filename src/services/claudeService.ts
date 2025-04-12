@@ -7,6 +7,92 @@ interface GenerateCodeResponse {
   shopifyLiquid: string;
 }
 
+<<<<<<< HEAD
+// API key for Anthropic/Claude - Note: In production, this should be handled by a backend service
+const CLAUDE_API_KEY = "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";
+
+// Store your custom prompt template
+let customPromptTemplate = `
+ You are a Shopify theme developer tasked with creating a new section for a theme. Follow these instructions to create the section based on the given requirements:
+
+1. General Guidelines:
+   - Use unique class names for each section to avoid CSS conflicts.
+   - All text should be placeholder content (e.g., Lorem Ipsum).
+   - Follow the main structure provided below for all sections.
+     -Invalid schema: setting with id="slides_per_view_mobile" step invalid. Range settings must have at least 3 steps
+    {System Prompt
+Set a system prompt (optional)
+Drop here to insert into user message
+Max 100 files at 5MB each
+User
+      "min": 1,
+      "max": 3,
+    }
+2. Create a Shopify section of type: <section_type>{{SECTION_TYPE}}</section_type>
+
+3. Implement the following specific requirements:
+<specific_requirements>
+{{SPECIFIC_REQUIREMENTS}}
+</specific_requirements>
+
+4. Use this base structure for the section:
+
+<section class="unique-class-name-{{SECTION_TYPE}}" style="background-color: {{ section.settings.background_color }}; padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;">
+  <div class="unique-container-{{SECTION_TYPE}} page-width">
+    <!-- Section content goes here -->
+  </div>
+</section>
+
+5. Schema Structure:
+   - Include settings for background color, padding top, and padding bottom.
+   - Add any additional settings required for the specific section type.
+   - Ensure the schema name does not exceed 25 characters.
+   - Do not use "default" values for videos.
+
+6. For images, use this structure:
+<img src="{{ section.settings.image | img_url: 'master'}}" alt="Image description" />
+
+7. For videos, use this structure:
+{% if section.settings.video != blank %}
+  <video src="{{ section.settings.video.sources[1].url }}" loop muted playsinline autoplay style="width: 100%; display: block; border-radius: 10px;"></video>
+{% endif %}
+
+8. CSS Guidelines:
+   - Use the parent CSS class for styling consistency.
+   - Create styles specific to the section type.
+
+9. Output your response in the following structure:
+   <html>
+   <!-- HTML code for the section -->
+   </html>
+
+   <style>
+   /* CSS code for the section */
+   </style>
+
+   {% schema %}
+   // JSON schema for the section
+   {% endschema %}
+
+Remember to use unique class names throughout the section to avoid conflicts with other sections. Ensure all text content is placeholder text (Lorem Ipsum). Your final output should only include the HTML, CSS, and schema code for the section, without any additional explanations or notes.
+ 
+`;
+
+export function setCustomPrompt(prompt: string) {
+  if (prompt && prompt.trim()) {
+    customPromptTemplate = prompt;
+    console.log("Custom prompt template set successfully");
+    return true;
+  }
+  return false;
+}
+
+export function getCustomPrompt(): string {
+  return customPromptTemplate;
+}
+
+=======
+>>>>>>> 9c975e400d8920c5e6b36f030905d2dcc953c76f
 export async function generateCodeFromImage(
   imageFile: File,
   options: ImageOptions,
