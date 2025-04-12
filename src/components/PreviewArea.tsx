@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, MessageSquare, Bot } from 'lucide-react';
+import { Loader2, Bot } from 'lucide-react';
 import CodePreview from './CodePreview';
 
 interface PreviewAreaProps {
@@ -27,7 +27,7 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
             <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
             <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
           </div>
-          <p className="mt-6 font-medium">I'm analyzing your image...</p>
+          <p className="mt-6 font-medium">Analyzing your design...</p>
           <p className="text-sm text-muted-foreground mt-2">This might take a few seconds</p>
         </div>
       )}
@@ -40,10 +40,10 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
               <Bot className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="font-medium mb-2">I've created your Shopify code!</h3>
+              <h3 className="font-medium mb-2">Your Shopify code is ready!</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                I've analyzed your image and requirements to generate Shopify Liquid code that matches your needs.
-                You can copy and use this code directly in your Shopify theme.
+                I've analyzed your requirements and created Shopify Liquid code that matches your needs.
+                You can copy this code directly into your Shopify theme.
               </p>
             </div>
           </div>

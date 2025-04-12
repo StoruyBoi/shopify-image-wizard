@@ -52,8 +52,8 @@ export async function generateShopifyCode(
     const apiKey = import.meta.env.VITE_CLAUDE_API_KEY;
     
     if (!apiKey) {
-      console.warn('Claude API key is missing. Using mock response.');
-      return getMockResponse(sectionType);
+      console.warn('Claude API key is missing. Please create a .env file in your project root with VITE_CLAUDE_API_KEY=your_api_key');
+      throw new Error('Claude API key is missing');
     }
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -84,8 +84,7 @@ export async function generateShopifyCode(
     return data.content[0].text;
   } catch (error) {
     console.error('Error generating code:', error);
-    // Return a mock response in case of error
-    return getMockResponse(sectionType);
+    throw error;
   }
 }
 
@@ -286,108 +285,4 @@ function parseGeneratedCode(generatedCode: string): { code: string; shopifyLiqui
   }
 
   return result;
-}
-
-// Mock response for fallback when API key is missing or for development
-function getMockResponse(sectionType: string): string {
-  return `<html>
-<!-- Shopify ${sectionType} Section HTML -->
-<div class="section-${sectionType.toLowerCase().replace(/\s+/g, '-')}" data-section-id="{{ section.id }}">
-  <div class="section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__inner">
-    <h2 class="section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__heading">{{ section.settings.heading }}</h2>
-    <div class="section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__content">
-      <p>This is a mock response for a ${sectionType} section. Please set up a Claude API key to get real responses.</p>
-    </div>
-  </div>
-</div>
-</html>
-
-<style>
-.section-${sectionType.toLowerCase().replace(/\s+/g, '-')} {
-  padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;
-  background-color: {{ section.settings.background_color }};
-}
-
-.section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__heading {
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: {{ section.settings.content_alignment }};
-}
-
-.section-${sectionType.toLowerCase().replace(/\s+/g, '-')}__content {
-  text-align: {{ section.settings.content_alignment }};
-}
-</style>
-
-{% schema %}
-{
-  "name": "${sectionType}",
-  "settings": [
-    {
-      "type": "text",
-      "id": "heading",
-      "label": "Heading",
-      "default": "${sectionType} Heading"
-    },
-    {
-      "type": "select",
-      "id": "content_alignment",
-      "label": "Content Alignment",
-      "options": [
-        {
-          "value": "left",
-          "label": "Left"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "right",
-          "label": "Right"
-        }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "color",
-      "id": "background_color",
-      "label": "Background Color",
-      "default": "#FFFFFF"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "label": "Padding Top",
-      "min": 0,
-      "max": 100,
-      "step": 5,
-      "default": 30,
-      "unit": "px"
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "label": "Padding Bottom",
-      "min": 0,
-      "max": 100,
-      "step": 5,
-      "default": 30,
-      "unit": "px"
-    }
-  ],
-  "presets": [
-    {
-      "name": "${sectionType}",
-      "category": "Custom"
-    }
-  ]
-}
-{% endschema %}`;
 }
