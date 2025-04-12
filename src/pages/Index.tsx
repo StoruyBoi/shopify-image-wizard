@@ -181,26 +181,27 @@ const Index = () => {
                   generatedCode={generatedCode}
                 />
 
-                {!uploadedImage && !generatedImageUrl && (
+                {!uploadedImage && !generatedImageUrl && !isProcessing && (
                   <div className="rounded-lg border p-8 text-center glass">
                     <div className="flex justify-center mb-4">
                       <div className="p-4 rounded-full bg-secondary">
                         <Sparkles className="h-8 w-8 text-muted-foreground" />
                       </div>
                     </div>
-                    <h3 className="text-lg font-medium mb-2">No Preview Yet</h3>
+                    <h3 className="text-lg font-medium mb-2">Let's Create Some Code</h3>
                     <p className="text-muted-foreground text-sm">
-                      Upload an image and configure your options to generate Shopify Liquid code
+                      Upload an image and I'll generate Shopify Liquid code for you.
+                      Just tell me what kind of section you need!
                     </p>
                   </div>
                 )}
 
                 <div className="mt-8 p-4 rounded-lg border glass">
-                  <h3 className="text-sm font-medium mb-2">About Claude 3.7 Integration</h3>
+                  <h3 className="text-sm font-medium mb-2">How It Works</h3>
                   <p className="text-xs text-muted-foreground">
-                    This application uses Claude 3.7 AI to transform images into Shopify Liquid code.
-                    The AI analyzes your image and generates code that recreates the visual elements
-                    as a Shopify section that you can use in your theme.
+                    This app uses Claude 3.7 AI to transform images into Shopify Liquid code.
+                    To get the best results, upload a clear image and provide detailed requirements.
+                    You'll need to add your Claude API key to the .env file as VITE_CLAUDE_API_KEY.
                   </p>
                 </div>
               </div>
