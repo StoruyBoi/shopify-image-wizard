@@ -1,7 +1,6 @@
 
 import { ImageOptions } from '@/components/OptionsSelector';
 import { fileToBase64, generateShopifyCode } from './api/claudeApi';
-import { generateSimulatedResponse } from './mockResponses';
 
 interface GenerateCodeResponse {
   code: string;
@@ -24,29 +23,20 @@ export async function generateCodeFromImage(
     // Generate image description based on file (for now, just the filename)
     const imageDescription = `Image filename: ${imageFile.name}`;
     
-    // Fallback to simulated response if API call fails
-    try {
-      // Call the Claude API with the sectionType, requirements, and image description
-      const response = await generateShopifyCode(
-        getSectionTypeFromPurpose(options.purpose),
-        requirements,
-        imageDescription
-      );
-      
-      console.log("Claude API response received");
-      
-      // Parse the response
-      const parsedResponse = parseClaudeResponse(response);
-      console.log("Parsed response:", parsedResponse);
-      
-      return parsedResponse;
-    } catch (apiError) {
-      console.error("Error calling Claude API:", apiError);
-      console.log("Falling back to simulated response");
-      
-      // Fallback to simulated response
-      return generateSimulatedResponse(options);
-    }
+    // Call the Claude API with the sectionType, requirements, and image description
+    const response = await generateShopifyCode(
+      getSectionTypeFromPurpose(options.purpose, options.customType),
+      requirements,
+      imageDescription
+    );
+    
+    console.log("Claude API response received");
+    
+    // Parse the response
+    const parsedResponse = parseClaudeResponse(response);
+    console.log("Parsed response:", parsedResponse);
+    
+    return parsedResponse;
   } catch (error) {
     console.error("Error generating code from image:", error);
     throw new Error("Failed to generate code from image. Please try again.");
@@ -54,7 +44,11 @@ export async function generateCodeFromImage(
 }
 
 // Helper function to convert purpose to a section type
-function getSectionTypeFromPurpose(purpose: string): string {
+function getSectionTypeFromPurpose(purpose: string, customType?: string): string {
+  if (purpose === 'custom' && customType) {
+    return customType;
+  }
+  
   const sectionTypeMap: Record<string, string> = {
     'product': 'Product Section',
     'slider': 'Slideshow',
@@ -129,6 +123,6 @@ function parseClaudeResponse(response: string): GenerateCodeResponse {
     };
   } catch (error) {
     console.error("Error parsing Claude response:", error);
-    throw new Error("Failed to parse the response from Claude. Falling back to simulated response.");
+    throw new Error("Failed to parse the response from Claude.");
   }
 }

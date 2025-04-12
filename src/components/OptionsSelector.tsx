@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Check } from 'lucide-react';
+import { Input } from './ui/input';
 
-export type ImagePurpose = 'product' | 'slider' | 'banner' | 'collection' | 'announcement' | 'footer' | 'header' | 'image-with-text' | 'multicolumn';
+export type ImagePurpose = 'product' | 'slider' | 'banner' | 'collection' | 'announcement' | 'footer' | 'header' | 'image-with-text' | 'multicolumn' | 'custom';
 export type ImageOptions = {
   purpose: ImagePurpose;
+  customType?: string;
 };
 
 const options: Array<{
@@ -66,6 +68,12 @@ const options: Array<{
     title: 'Multi-column',
     description: 'Content in multiple columns',
     icon: '🏛️'
+  },
+  {
+    value: 'custom',
+    title: 'Custom Section',
+    description: 'Define your own section type',
+    icon: '✨'
   }
 ];
 
@@ -79,7 +87,17 @@ const OptionsSelector: React.FC<OptionsSelectorProps> = ({
   onOptionsChange 
 }) => {
   const handlePurposeSelect = (purpose: ImagePurpose) => {
-    onOptionsChange({ purpose });
+    onOptionsChange({ 
+      ...selectedOptions, 
+      purpose 
+    });
+  };
+  
+  const handleCustomTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onOptionsChange({
+      ...selectedOptions,
+      customType: e.target.value
+    });
   };
 
   return (
@@ -114,6 +132,23 @@ const OptionsSelector: React.FC<OptionsSelectorProps> = ({
           ))}
         </div>
       </div>
+      
+      {/* Custom Section Type Input */}
+      {selectedOptions.purpose === 'custom' && (
+        <div className="mt-4">
+          <label htmlFor="customType" className="block text-sm font-medium mb-1">
+            Custom Section Type
+          </label>
+          <Input
+            id="customType"
+            type="text"
+            placeholder="Enter custom section type"
+            value={selectedOptions.customType || ''}
+            onChange={handleCustomTypeChange}
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 };
