@@ -7,7 +7,7 @@ interface GenerateCodeResponse {
   shopifyLiquid: string;
 }
 
-<<<<<<< HEAD
+
 // API key for Anthropic/Claude - Note: In production, this should be handled by a backend service
 const CLAUDE_API_KEY = "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";
 
