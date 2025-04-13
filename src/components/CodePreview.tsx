@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CodePreviewProps {
   code: string;
-  language?: string;
   title?: string;
   codeRef?: React.RefObject<HTMLPreElement>;
   isGenerating?: boolean;
@@ -15,8 +14,7 @@ interface CodePreviewProps {
 
 const CodePreview: React.FC<CodePreviewProps> = ({ 
   code, 
-  language = 'liquid', 
-  title = 'Generated Shopify Liquid Code',
+  title = 'Shopify Liquid Code',
   codeRef: externalCodeRef,
   isGenerating = false,
   currentLine = 0
@@ -43,7 +41,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `shopify-${language}-code.liquid`;
+    a.download = 'shopify-section.liquid';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -74,7 +72,8 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       const highlightedCode = escapedCode
         .replace(/({%.*?%})/g, '<span class="text-blue-400">$1</span>')
         .replace(/({{.*?}})/g, '<span class="text-green-400">$1</span>')
-        .replace(/(&lt;.*?&gt;)/g, '<span class="text-purple-400">$1</span>');
+        .replace(/(&lt;.*?&gt;)/g, '<span class="text-purple-400">$1</span>')
+        .replace(/(&lt;!--.*?--&gt;)/g, '<span class="text-gray-400">$1</span>');
       
       codeRef.current.innerHTML = highlightedCode;
       
@@ -134,7 +133,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({
       <div className="p-4 bg-muted/10 relative">
         <div 
           ref={containerRef}
-          className="overflow-y-auto max-h-96"
+          className="overflow-y-auto max-h-[600px]"
         >
           <pre 
             ref={codeRef}

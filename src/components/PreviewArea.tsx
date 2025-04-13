@@ -19,25 +19,35 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
   generatedCode
 }) => {
   const [displayCode, setDisplayCode] = useState<string>('');
-  const [displaySchema, setDisplaySchema] = useState<string>('');
   const [isGeneratingAnimation, setIsGeneratingAnimation] = useState(false);
   const [currentLine, setCurrentLine] = useState(0);
+  
+  // Helper to combine code and schema into a single Shopify section
+  const combineCodeAndSchema = (code: string, schema: string): string => {
+    // Remove HTML tags if present
+    const cleanCode = code.replace(/<\/?html>/g, '').trim();
+    return `<!-- HTML/Liquid Template for Shopify Section -->\n${cleanCode}\n\n${schema}`;
+  };
+  
+  // Get the combined code for display
+  const getCombinedCode = (): string => {
+    if (!generatedCode) return '';
+    return combineCodeAndSchema(generatedCode.code, generatedCode.shopifyLiquid);
+  };
   
   // Animation timers
   useEffect(() => {
     if (isProcessing && !isGeneratingAnimation) {
       setIsGeneratingAnimation(true);
       setDisplayCode('');
-      setDisplaySchema('');
       setCurrentLine(0);
     }
     
     if (!isProcessing && generatedCode && isGeneratingAnimation) {
       // Start the animated typing effect when code is ready
-      let codeLines = generatedCode.code.split('\n');
-      let schemaLines = generatedCode.shopifyLiquid.split('\n');
+      const combinedCode = combineCodeAndSchema(generatedCode.code, generatedCode.shopifyLiquid);
+      let codeLines = combinedCode.split('\n');
       let codeCurrent = '';
-      let schemaCurrent = '';
       let lineIndex = 0;
       
       const typingInterval = setInterval(() => {
@@ -46,16 +56,10 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
           setDisplayCode(codeCurrent);
           setCurrentLine(lineIndex);
           lineIndex++;
-        } else if (lineIndex < codeLines.length + schemaLines.length) {
-          const schemaIndex = lineIndex - codeLines.length;
-          schemaCurrent += schemaLines[schemaIndex] + '\n';
-          setDisplaySchema(schemaCurrent);
-          lineIndex++;
         } else {
           clearInterval(typingInterval);
           setIsGeneratingAnimation(false);
-          setDisplayCode(generatedCode.code);
-          setDisplaySchema(generatedCode.shopifyLiquid);
+          setDisplayCode(combinedCode);
         }
       }, 50); // Speed of typing animation
       
@@ -136,16 +140,10 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
           </div>
           
           <CodePreview 
-            code={isGeneratingAnimation ? displayCode : generatedCode.code} 
+            code={isGeneratingAnimation ? displayCode : getCombinedCode()} 
             title="HTML/Liquid Template" 
             isGenerating={isGeneratingAnimation}
             currentLine={currentLine}
-          />
-          
-          <CodePreview 
-            code={isGeneratingAnimation ? displaySchema : generatedCode.shopifyLiquid} 
-            title="Shopify Schema" 
-            isGenerating={isGeneratingAnimation}
           />
         </div>
       )}
