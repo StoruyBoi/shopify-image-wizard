@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { Loader2, Bot, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Loader2, Bot, AlertCircle, Terminal } from 'lucide-react';
 import CodePreview from './CodePreview';
+import { Skeleton } from './ui/skeleton';
 
 interface PreviewAreaProps {
   previewUrl: string | null;
@@ -17,6 +18,51 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
   isProcessing,
   generatedCode
 }) => {
+  const [displayCode, setDisplayCode] = useState<string>('');
+  const [displaySchema, setDisplaySchema] = useState<string>('');
+  const [isGeneratingAnimation, setIsGeneratingAnimation] = useState(false);
+  const [currentLine, setCurrentLine] = useState(0);
+  
+  // Animation timers
+  useEffect(() => {
+    if (isProcessing && !isGeneratingAnimation) {
+      setIsGeneratingAnimation(true);
+      setDisplayCode('');
+      setDisplaySchema('');
+      setCurrentLine(0);
+    }
+    
+    if (!isProcessing && generatedCode && isGeneratingAnimation) {
+      // Start the animated typing effect when code is ready
+      let codeLines = generatedCode.code.split('\n');
+      let schemaLines = generatedCode.shopifyLiquid.split('\n');
+      let codeCurrent = '';
+      let schemaCurrent = '';
+      let lineIndex = 0;
+      
+      const typingInterval = setInterval(() => {
+        if (lineIndex < codeLines.length) {
+          codeCurrent += codeLines[lineIndex] + '\n';
+          setDisplayCode(codeCurrent);
+          setCurrentLine(lineIndex);
+          lineIndex++;
+        } else if (lineIndex < codeLines.length + schemaLines.length) {
+          const schemaIndex = lineIndex - codeLines.length;
+          schemaCurrent += schemaLines[schemaIndex] + '\n';
+          setDisplaySchema(schemaCurrent);
+          lineIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setIsGeneratingAnimation(false);
+          setDisplayCode(generatedCode.code);
+          setDisplaySchema(generatedCode.shopifyLiquid);
+        }
+      }, 50); // Speed of typing animation
+      
+      return () => clearInterval(typingInterval);
+    }
+  }, [isProcessing, generatedCode, isGeneratingAnimation]);
+
   if (!isProcessing && !generatedCode) return null;
 
   return (
@@ -30,6 +76,28 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
           </div>
           <p className="mt-6 font-medium">Analyzing your design...</p>
           <p className="text-sm text-muted-foreground mt-2">This might take a few seconds</p>
+          
+          <div className="w-full max-w-lg mt-8">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+            
+            <div className="mt-6 bg-background/50 rounded-md p-3 border border-dashed border-muted overflow-hidden">
+              <div className="flex items-center gap-2 mb-2">
+                <Terminal className="h-4 w-4 text-primary" />
+                <p className="text-xs font-mono text-primary">Generating code...</p>
+              </div>
+              <div className="animate-pulse space-y-1 font-mono text-xs">
+                <div className="h-3 bg-muted w-5/6 rounded" />
+                <div className="h-3 bg-muted w-3/4 rounded" />
+                <div className="h-3 bg-muted w-4/5 rounded" />
+                <div className="h-3 bg-muted w-2/3 rounded" />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -68,13 +136,16 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
           </div>
           
           <CodePreview 
-            code={generatedCode.code} 
+            code={isGeneratingAnimation ? displayCode : generatedCode.code} 
             title="HTML/Liquid Template" 
+            isGenerating={isGeneratingAnimation}
+            currentLine={currentLine}
           />
           
           <CodePreview 
-            code={generatedCode.shopifyLiquid} 
+            code={isGeneratingAnimation ? displaySchema : generatedCode.shopifyLiquid} 
             title="Shopify Schema" 
+            isGenerating={isGeneratingAnimation}
           />
         </div>
       )}
