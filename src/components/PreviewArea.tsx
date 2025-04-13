@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, Bot } from 'lucide-react';
+import { Loader2, Bot, AlertCircle } from 'lucide-react';
 import CodePreview from './CodePreview';
 
 interface PreviewAreaProps {
@@ -13,6 +13,7 @@ interface PreviewAreaProps {
 }
 
 const PreviewArea: React.FC<PreviewAreaProps> = ({ 
+  previewUrl,
   isProcessing,
   generatedCode
 }) => {
@@ -45,6 +46,16 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
                 I've analyzed your requirements and created Shopify Liquid code that matches your needs.
                 You can copy this code directly into your Shopify theme.
               </p>
+              
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-4 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-yellow-700">
+                    <strong>Note:</strong> Due to CORS restrictions, this is using sample code. In a production environment, 
+                    you would need a backend proxy server to make requests to the Claude API.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           
