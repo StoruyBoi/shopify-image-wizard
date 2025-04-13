@@ -2,8 +2,19 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import CreditsDisplay from './CreditsDisplay';
+import UserSettingsMenu from './UserSettingsMenu';
 
-const Header = () => {
+interface HeaderProps {
+  userCredits?: {
+    current: number;
+    max: number;
+  };
+}
+
+const Header: React.FC<HeaderProps> = ({ 
+  userCredits = { current: 1, max: 3 } 
+}) => {
   return (
     <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-50 py-4">
       <div className="container mx-auto px-4 flex items-center justify-between">
@@ -14,10 +25,15 @@ const Header = () => {
           <h1 className="text-xl font-bold text-foreground">Shopify Image Wizard</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">
+          <CreditsDisplay 
+            currentCredits={userCredits.current} 
+            maxCredits={userCredits.max} 
+          />
+          <div className="text-sm text-muted-foreground hidden md:block">
             Powered by Claude 3.7
           </div>
           <ThemeToggle />
+          <UserSettingsMenu />
         </div>
       </div>
     </header>
