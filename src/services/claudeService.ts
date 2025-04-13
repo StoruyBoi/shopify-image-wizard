@@ -3,6 +3,10 @@ import { ImageOptions } from '@/components/OptionsSelector';
 
 /**
  * Claude API integration for Shopify Liquid code generation
+ * 
+ * IMPORTANT: This is a demonstration showing how to integrate with Claude API.
+ * In a production environment, you would need to use a backend proxy server to 
+ * avoid CORS issues and securely handle API keys.
  */
 
 export async function generateCodeFromImage(
@@ -44,6 +48,29 @@ export async function generateCodeFromImage(
   }
 }
 
+/**
+ * In a production application, this function would call your backend proxy 
+ * instead of directly calling the Claude API.
+ * 
+ * Example of how it should look in production:
+ * 
+ * async function generateShopifyCode(sectionType, requirements, imageDescriptions) {
+ *   try {
+ *     const response = await fetch('https://your-backend.com/api/generate-code', {
+ *       method: 'POST',
+ *       headers: { 'Content-Type': 'application/json' },
+ *       body: JSON.stringify({ sectionType, requirements, imageDescriptions })
+ *     });
+ *     
+ *     if (!response.ok) throw new Error('Backend API error');
+ *     const data = await response.json();
+ *     return data.generatedCode;
+ *   } catch (error) {
+ *     console.error('Error:', error);
+ *     return getMockResponseText(sectionType);
+ *   }
+ * }
+ */
 export async function generateShopifyCode(
   sectionType: string,
   requirements: string,
@@ -58,34 +85,41 @@ export async function generateShopifyCode(
       return getMockResponseText(sectionType);
     }
     
-    // We're going to attempt the API call, but it will likely fail due to CORS
-    // This is expected in development without a backend proxy
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 4000,
-        messages: [
-          { 
-            role: "user", 
-            content: createPrompt(sectionType, requirements, imageDescriptions) 
-          }
-        ]
-      }),
-    });
+    // CORS Error in browser - this would need a backend proxy in production
+    // The following code is included to demonstrate the intended implementation
+    // but will fail due to CORS, falling back to mock response
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 4000,
+          messages: [
+            { 
+              role: "user", 
+              content: createPrompt(sectionType, requirements, imageDescriptions) 
+            }
+          ]
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error calling Claude API');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error calling Claude API');
+      }
+
+      const data = await response.json();
+      return data.content[0].text;
+    } catch (error) {
+      console.error('Error generating code:', error);
+      // Expected to fail in browser due to CORS - return mock response
+      return getMockResponseText(sectionType);
     }
-
-    const data = await response.json();
-    return data.content[0].text;
   } catch (error) {
     console.error('Error generating code:', error);
     // Important: Return mock response when API call fails (e.g. CORS error)

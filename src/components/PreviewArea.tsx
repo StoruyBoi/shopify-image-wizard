@@ -47,13 +47,21 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
                 You can copy this code directly into your Shopify theme.
               </p>
               
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-4 flex items-start gap-2">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md mb-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                 <div>
+                  <p className="text-sm text-yellow-700 font-medium mb-2">
+                    Demo Mode: Using Sample Code
+                  </p>
                   <p className="text-sm text-yellow-700">
-                    <strong>Note:</strong> Due to CORS restrictions, this is using sample code. In a production environment, 
+                    This demo is using sample code due to CORS restrictions. In a production environment, 
                     you would need a backend proxy server to make requests to the Claude API.
                   </p>
+                  <div className="mt-3 p-3 bg-white/60 rounded border border-yellow-100 text-xs font-mono text-yellow-800">
+                    <p className="mb-1"><span className="font-semibold">Frontend:</span> React app (localhost:8080)</p>
+                    <p className="mb-1"><span className="font-semibold">Backend Proxy:</span> Simple Express server</p>
+                    <p><span className="font-semibold">API:</span> Claude API (api.anthropic.com)</p>
+                  </div>
                 </div>
               </div>
             </div>
