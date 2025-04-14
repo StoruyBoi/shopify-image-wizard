@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
 
 interface CreditsDisplayProps {
   currentCredits: number;
@@ -45,6 +46,14 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
     if (percentage > 20) return "bg-yellow-500";
     return "bg-red-500";
   };
+
+  const handleUpgradeClick = () => {
+    setIsUpgradeOpen(true);
+    toast({
+      title: "Pro Features",
+      description: "Upgrade to unlock more credits and features!",
+    });
+  };
   
   return (
     <>
@@ -62,14 +71,13 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              {/* This DialogTrigger needs to be inside a Dialog component */}
               <Button 
                 variant="ghost" 
                 size="icon" 
                 className="h-4 w-4 p-0 hidden group-hover:flex"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsUpgradeOpen(true);
+                  handleUpgradeClick();
                 }}
               >
                 <Crown className="h-3 w-3 text-primary" />
@@ -155,7 +163,18 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
             </div>
           </div>
 
-          <Button className="w-full">Upgrade Now</Button>
+          <Button 
+            className="w-full"
+            onClick={() => {
+              toast({
+                title: "Coming Soon",
+                description: "Upgrade functionality will be available soon!",
+              });
+              setIsUpgradeOpen(false);
+            }}
+          >
+            Upgrade Now
+          </Button>
         </DialogContent>
       </Dialog>
     </>
