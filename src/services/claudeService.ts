@@ -1,3 +1,4 @@
+
 import { ImageOptions } from '@/components/OptionsSelector';
 
 /**
@@ -41,43 +42,79 @@ export async function generateCodeFromImage(
 }
 
 /**
- * This function would normally call a backend proxy to avoid CORS issues.
+ * Next.js API Route Implementation Guide:
  * 
- * If you were using Next.js, you could create an API route like:
- * - app/api/generate/route.ts (Next.js 13+)
- * - pages/api/generate.ts (Next.js 12 and below)
- *
- * The frontend would call your own API which would then call Claude's API server-side.
+ * 1. Create a new Next.js project if you don't have one:
+ *    npx create-next-app@latest claude-api-proxy
  * 
- * Example of Next.js API route:
- * ```
- * // app/api/generate/route.ts
- * export async function POST(request: Request) {
- *   const { sectionType, requirements, imageBase64 } = await request.json();
- *   
- *   const response = await fetch('https://api.anthropic.com/v1/messages', {
- *     method: 'POST',
- *     headers: {
- *       'x-api-key': process.env.CLAUDE_API_KEY,
- *       'anthropic-version': '2023-06-01',
- *       'content-type': 'application/json',
- *     },
- *     body: JSON.stringify({
- *       model: "claude-3-5-sonnet-20241022",
- *       max_tokens: 4000,
- *       messages: [
- *         { 
- *           role: "user", 
- *           content: createPrompt(sectionType, requirements, imageBase64) 
- *         }
- *       ]
- *     }),
- *   });
+ * 2. Create an API route at pages/api/claude.js (or .ts):
+ *    ```
+ *    import type { NextApiRequest, NextApiResponse } from 'next';
+ *    
+ *    export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+ *      if (req.method !== 'POST') {
+ *        return res.status(405).json({ error: 'Method not allowed' });
+ *      }
+ *      
+ *      try {
+ *        const { sectionType, requirements, imageBase64 } = req.body;
+ *        
+ *        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+ *          method: 'POST',
+ *          headers: {
+ *            'x-api-key': process.env.CLAUDE_API_KEY,
+ *            'anthropic-version': '2023-06-01',
+ *            'content-type': 'application/json',
+ *          },
+ *          body: JSON.stringify({
+ *            model: "claude-3-5-sonnet-20241022",
+ *            max_tokens: 4000,
+ *            messages: [
+ *              { 
+ *                role: "user", 
+ *                content: [
+ *                  { type: "text", text: `Generate Shopify code for ${sectionType}. Requirements: ${requirements}` },
+ *                  imageBase64 ? { 
+ *                    type: "image", 
+ *                    source: { type: "base64", media_type: "image/jpeg", data: imageBase64 } 
+ *                  } : null
+ *                ].filter(Boolean)
+ *              }
+ *            ]
+ *          }),
+ *        });
  *
- *   const data = await response.json();
- *   return Response.json({ generatedCode: data.content[0].text });
- * }
- * ```
+ *        const data = await claudeResponse.json();
+ *        return res.status(200).json(data);
+ *      } catch (error) {
+ *        console.error('Error calling Claude API:', error);
+ *        return res.status(500).json({ error: 'Failed to call Claude API' });
+ *      }
+ *    }
+ *    ```
+ * 
+ * 3. Add your Claude API key to .env.local:
+ *    CLAUDE_API_KEY=your-api-key-here
+ * 
+ * 4. Update your client code to call your Next.js API instead of directly calling Claude:
+ *    ```
+ *    // Convert image to base64
+ *    const imageBase64 = await fileToBase64(imageFile);
+ *    
+ *    // Call your Next.js API
+ *    const response = await fetch('/api/claude', {
+ *      method: 'POST',
+ *      headers: { 'Content-Type': 'application/json' },
+ *      body: JSON.stringify({
+ *        sectionType,
+ *        requirements,
+ *        imageBase64
+ *      })
+ *    });
+ *    
+ *    const data = await response.json();
+ *    // Process the API response...
+ *    ```
  */
 export async function generateShopifyCode(
   sectionType: string,

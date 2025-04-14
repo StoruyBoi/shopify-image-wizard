@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Bot, AlertCircle, Terminal, Server } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Loader2, Bot, AlertCircle, Terminal, Server, ArrowRight } from 'lucide-react';
 import CodePreview from './CodePreview';
 import { Skeleton } from './ui/skeleton';
 
@@ -130,15 +130,24 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
                     applications from directly calling the Claude API.
                   </p>
                   <div className="mt-3 p-3 bg-white/60 rounded border border-yellow-100 text-xs font-mono text-yellow-800">
-                    <p className="mb-1 flex items-center gap-1.5">
-                      <Server className="h-3.5 w-3.5" />
-                      <span>To use the actual Claude API, you would need:</span>
-                    </p>
-                    <ul className="list-disc pl-5 space-y-1 mt-1">
-                      <li>A server-side API proxy (Node.js, Next.js API routes, etc.)</li>
-                      <li>Server environment to store your API keys securely</li>
-                      <li>Backend to handle API requests without CORS issues</li>
-                    </ul>
+                    <div className="space-y-1">
+                      <p className="flex items-center gap-1.5">
+                        <Server className="h-3.5 w-3.5" />
+                        <span className="font-medium">Next.js Solution:</span>
+                      </p>
+                      <p className="pl-5 flex items-start">
+                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
+                        <span>Create API route at <code>pages/api/claude.js</code></span>
+                      </p>
+                      <p className="pl-5 flex items-start">
+                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
+                        <span>Add Claude API key to <code>.env.local</code></span>
+                      </p>
+                      <p className="pl-5 flex items-start">
+                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
+                        <span>Update client fetch to call your API route</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
