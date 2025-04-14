@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { History, PanelLeft, Settings, LogOut, Crown, Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { 
@@ -12,11 +12,14 @@ import {
   SidebarGroupLabel, 
   SidebarHeader, 
   SidebarMenu, 
-  SidebarMenuButton, 
+  SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar
 } from './ui/sidebar';
+import { getAllChats, createNewChat, clearAllChats } from '@/services/chatHistoryService';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ChatHistoryItem {
   id: string;
@@ -24,37 +27,69 @@ interface ChatHistoryItem {
   date: string;
 }
 
-// Group chat history by date
-const groupChatsByDate = (chats: ChatHistoryItem[]) => {
-  const grouped: Record<string, ChatHistoryItem[]> = {};
-  
-  chats.forEach(chat => {
-    if (!grouped[chat.date]) {
-      grouped[chat.date] = [];
-    }
-    grouped[chat.date].push(chat);
-  });
-  
-  return grouped;
-};
-
 const ChatSidebar = () => {
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
-  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
-    { id: '1', title: 'CORS issue fix', date: 'Today' },
-    { id: '2', title: 'cm to feet conversion', date: 'Today' },
-    { id: '3', title: 'Shopify SEO Poster Design', date: 'Yesterday' },
-    { id: '4', title: 'Claude API Shopify Theme', date: 'Yesterday' },
-    { id: '5', title: 'Claude API Integration Fix', date: 'Yesterday' },
-    { id: '6', title: 'Remove Git from project', date: 'Yesterday' },
-    { id: '7', title: 'Add project to GitHub', date: 'Yesterday' },
-    { id: '8', title: 'AI Shopify Code Generator', date: 'Yesterday' },
-    { id: '9', title: 'Shopify Code Generator App', date: 'Previous 7 Days' },
-    { id: '10', title: 'Shopify Template Banner Design', date: 'Previous 7 Days' },
-    { id: '11', title: 'Integral Solving Steps', date: 'Previous 7 Days' },
-  ]);
+  const { toast } = useToast();
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
+  useEffect(() => {
+    // Load chat history from localStorage
+    setChatHistory(getAllChats());
+  }, []);
 
-  const groupedChats = groupChatsByDate(chatHistory);
+  // Group chat history by date
+  const groupedChats = chatHistory.reduce<Record<string, ChatHistoryItem[]>>((acc, chat) => {
+    if (!acc[chat.date]) {
+      acc[chat.date] = [];
+    }
+    acc[chat.date].push(chat);
+    return acc;
+  }, {});
+
+  const handleNewChat = () => {
+    const newChat = createNewChat();
+    setChatHistory(prev => [newChat, ...prev]);
+    if (currentPath !== '/') {
+      navigate('/');
+    }
+    toast({
+      title: "New chat created",
+      description: "You can now start a new conversation"
+    });
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear all chat history? This action cannot be undone.')) {
+      clearAllChats();
+      setChatHistory([]);
+      toast({
+        title: "Chat history cleared",
+        description: "All your conversation history has been removed",
+        variant: "destructive"
+      });
+      if (currentPath !== '/') {
+        navigate('/');
+      }
+    }
+  };
+
+  const handleChatSelect = (chatId: string) => {
+    // In a real implementation, this would load the selected chat
+    // For now, we'll just navigate to home
+    if (currentPath !== '/') {
+      navigate('/');
+    }
+    
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
   
   return (
     <>
@@ -79,7 +114,12 @@ const ChatSidebar = () => {
           </div>
           
           <div className="p-2">
-            <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-2" 
+              size="sm"
+              onClick={handleNewChat}
+            >
               <Plus className="h-4 w-4" />
               <span>New chat</span>
             </Button>
@@ -94,7 +134,10 @@ const ChatSidebar = () => {
                 <SidebarMenu>
                   {chats.map((chat) => (
                     <SidebarMenuItem key={chat.id}>
-                      <SidebarMenuButton tooltip={chat.title}>
+                      <SidebarMenuButton 
+                        onClick={() => handleChatSelect(chat.id)}
+                        tooltip={chat.title}
+                      >
                         <History className="h-4 w-4" />
                         <span>{chat.title}</span>
                       </SidebarMenuButton>
@@ -104,9 +147,17 @@ const ChatSidebar = () => {
               </SidebarGroupContent>
             </SidebarGroup>
           ))}
+          
+          {chatHistory.length === 0 && (
+            <div className="px-4 py-8 text-center text-muted-foreground">
+              <History className="mx-auto h-8 w-8 mb-2 opacity-50" />
+              <p className="text-sm">No conversation history</p>
+              <p className="text-xs mt-1">Start a new chat to begin</p>
+            </div>
+          )}
         </SidebarContent>
         
-        <SidebarFooter className="absolute bottom-0 left-0 right-0 border-t bg-background/80 backdrop-blur">
+        <SidebarFooter className="absolute bottom-0 left-0 right-0 border-t border-border bg-background/80 backdrop-blur">
           <div className="p-3">
             <Button 
               variant="ghost" 
@@ -128,8 +179,13 @@ const ChatSidebar = () => {
               </div>
               
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Settings className="h-4 w-4" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-destructive/80"
+                  onClick={handleClearHistory}
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <LogOut className="h-4 w-4" />

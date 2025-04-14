@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import CreditsDisplay from './CreditsDisplay';
 import UserSettingsMenu from './UserSettingsMenu';
+import { useUser } from '@/App';
 
 interface HeaderProps {
   userCredits?: {
@@ -13,8 +14,13 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  userCredits = { current: 1, max: 3 } 
+  userCredits: propCredits 
 }) => {
+  const { userCredits: contextCredits } = useUser();
+  
+  // Use props if provided, otherwise use context
+  const credits = propCredits || contextCredits;
+  
   return (
     <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-50 py-4">
       <div className="container mx-auto px-4 flex items-center justify-between">
@@ -26,8 +32,8 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="flex items-center gap-4">
           <CreditsDisplay 
-            currentCredits={userCredits.current} 
-            maxCredits={userCredits.max} 
+            currentCredits={credits.current} 
+            maxCredits={credits.max} 
           />
           <div className="text-sm text-muted-foreground hidden md:block">
             Powered by Claude 3.7
