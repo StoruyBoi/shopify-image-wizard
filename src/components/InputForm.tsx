@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ImageOptions } from './OptionsSelector';
 import { Button } from './ui/button';
-import { InfoCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface InputFormProps {
   selectedOptions: ImageOptions;
@@ -38,7 +38,7 @@ const InputForm: React.FC<InputFormProps> = ({ selectedOptions, onSubmit }) => {
         />
         
         <div className="mt-3 p-3 bg-blue-50/30 border border-blue-200 rounded-md flex items-start gap-2 text-sm">
-          <InfoCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="text-blue-700">
             <p className="font-medium mb-1">Demo Mode Active</p>
             <p>Due to CORS restrictions, this demo uses mock responses instead of actual Claude API calls.</p>
