@@ -30,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,18 +136,24 @@ const UserSettingsMenu = () => {
             </DropdownMenuGroup>
           ) : (
             <DropdownMenuGroup>
-              <DialogTrigger asChild>
-                <DropdownMenuItem onSelect={() => setIsLoginDialogOpen(true)}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  <span>Log in</span>
-                </DropdownMenuItem>
-              </DialogTrigger>
-              <DialogTrigger asChild>
-                <DropdownMenuItem onSelect={() => setIsSignupDialogOpen(true)}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Sign up</span>
-                </DropdownMenuItem>
-              </DialogTrigger>
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setIsLoginDialogOpen(true);
+                }}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                <span>Log in</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault(); 
+                  setIsSignupDialogOpen(true);
+                }}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Sign up</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleThemeToggle}>
                 {theme === "dark" ? (
                   <Sun className="mr-2 h-4 w-4" />

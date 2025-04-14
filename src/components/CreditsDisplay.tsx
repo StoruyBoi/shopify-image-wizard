@@ -62,16 +62,18 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 p-0 hidden group-hover:flex"
-                  onClick={() => setIsUpgradeOpen(true)}
-                >
-                  <Crown className="h-3 w-3 text-primary" />
-                </Button>
-              </DialogTrigger>
+              {/* This DialogTrigger needs to be inside a Dialog component */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 hidden group-hover:flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsUpgradeOpen(true);
+                }}
+              >
+                <Crown className="h-3 w-3 text-primary" />
+              </Button>
               <Info className="h-3 w-3 text-muted-foreground" />
             </div>
           </TooltipTrigger>

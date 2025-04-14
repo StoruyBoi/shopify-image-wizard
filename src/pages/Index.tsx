@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/App";
@@ -11,10 +10,9 @@ import ChatSidebar from '@/components/ChatSidebar';
 import { SidebarInset } from '@/components/ui/sidebar';
 import { Wand2, Sparkles, Crown } from 'lucide-react';
 import { generateCodeFromImage } from '@/services/claudeService';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { createNewChat, saveChat, getAllChats } from '@/services/chatHistoryService';
-import { cn } from '@/lib/utils';
 
 const Index = () => {
   const { toast } = useToast();
@@ -28,14 +26,11 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
 
-  // Load active chat if exists
   useEffect(() => {
     if (activeChat) {
       const chats = getAllChats();
       const chat = chats.find(c => c.id === activeChat);
       if (chat && chat.messages && chat.messages.length > 0) {
-        // If we have message history, we could restore the last state
-        // This is simplified - in a real app you'd have more robust state handling
         toast({
           title: "Chat loaded",
           description: `Loaded: ${chat.title}`,
@@ -68,7 +63,6 @@ const Index = () => {
       return;
     }
 
-    // Check if user has enough credits
     if (userCredits.current <= 0) {
       setIsUpgradeOpen(true);
       return;
@@ -78,38 +72,31 @@ const Index = () => {
     setGeneratedCode(null);
     
     try {
-      // Call Claude API to generate code
       const result = await generateCodeFromImage(
         uploadedImage.file,
         selectedOptions,
         requirements
       );
       
-      // Update UI with results
       setGeneratedImageUrl(uploadedImage.previewUrl);
       setGeneratedCode(result);
       
-      // Decrease credits after successful generation
       setUserCredits(prev => ({
         ...prev,
         current: Math.max(0, prev.current - 1)
       }));
       
-      // Save to chat history
       if (!activeChat) {
-        // Create new chat if none is active
         const title = `${selectedOptions.purpose} design`;
         const newChat = createNewChat(title);
         setActiveChat(newChat.id);
         
-        // Add message to chat
         newChat.messages = [
           { role: 'user', content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}` },
           { role: 'assistant', content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.` }
         ];
         saveChat(newChat);
       } else {
-        // Add to existing chat
         const chats = getAllChats();
         const chat = chats.find(c => c.id === activeChat);
         if (chat) {
@@ -264,15 +251,13 @@ const Index = () => {
                       </p>
                       {userCredits.current === 0 && (
                         <div className="mt-4">
-                          <DialogTrigger asChild>
-                            <Button 
-                              className="bg-gradient-to-r from-primary/80 to-app-blue/80"
-                              onClick={() => setIsUpgradeOpen(true)}
-                            >
-                              <Crown className="mr-2 h-4 w-4" />
-                              Upgrade for more credits
-                            </Button>
-                          </DialogTrigger>
+                          <Button 
+                            className="bg-gradient-to-r from-primary/80 to-app-blue/80"
+                            onClick={() => setIsUpgradeOpen(true)}
+                          >
+                            <Crown className="mr-2 h-4 w-4" />
+                            Upgrade for more credits
+                          </Button>
                         </div>
                       )}
                     </div>
