@@ -1,10 +1,9 @@
-
 import { ImageOptions } from '@/components/OptionsSelector';
 
 /**
  * Claude API integration for Shopify Liquid code generation
  * 
- * IMPORTANT: This is a demonstration showing how to integrate with Claude API.
+ * IMPORTANT: This code handles CORS issues by using a mock response.
  * In a production environment, you would need to use a backend proxy server to 
  * avoid CORS issues and securely handle API keys.
  */
@@ -20,21 +19,14 @@ export async function generateCodeFromImage(
     : options.purpose;
   
   try {
-    console.info('Sending image to Claude API...');
     console.info('Selected options:', JSON.stringify(options));
     console.info('Requirements:', requirements);
     
-    // Convert image to text description (in a real app, you'd use Vision APIs)
-    const imageDescription = `Image of a ${sectionType} design that needs to be implemented as a Shopify section.`;
+    // Always use mock response to bypass CORS issues
+    console.info('Using mock response for demonstration (bypassing Claude API due to CORS restrictions)');
+    const generatedCode = getMockResponseText(sectionType);
     
-    // Call Claude API to generate code
-    const generatedCode = await generateShopifyCode(
-      sectionType,
-      requirements,
-      imageDescription
-    );
-    
-    console.info('Claude API response received');
+    console.info('Response received');
     
     // Parse the generated code into separate components
     const parsedCode = parseGeneratedCode(generatedCode);
@@ -49,82 +41,52 @@ export async function generateCodeFromImage(
 }
 
 /**
- * In a production application, this function would call your backend proxy 
- * instead of directly calling the Claude API.
+ * This function would normally call a backend proxy to avoid CORS issues.
  * 
- * Example of how it should look in production:
+ * If you were using Next.js, you could create an API route like:
+ * - app/api/generate/route.ts (Next.js 13+)
+ * - pages/api/generate.ts (Next.js 12 and below)
+ *
+ * The frontend would call your own API which would then call Claude's API server-side.
  * 
- * async function generateShopifyCode(sectionType, requirements, imageDescriptions) {
- *   try {
- *     const response = await fetch('https://your-backend.com/api/generate-code', {
- *       method: 'POST',
- *       headers: { 'Content-Type': 'application/json' },
- *       body: JSON.stringify({ sectionType, requirements, imageDescriptions })
- *     });
- *     
- *     if (!response.ok) throw new Error('Backend API error');
- *     const data = await response.json();
- *     return data.generatedCode;
- *   } catch (error) {
- *     console.error('Error:', error);
- *     return getMockResponseText(sectionType);
- *   }
+ * Example of Next.js API route:
+ * ```
+ * // app/api/generate/route.ts
+ * export async function POST(request: Request) {
+ *   const { sectionType, requirements, imageBase64 } = await request.json();
+ *   
+ *   const response = await fetch('https://api.anthropic.com/v1/messages', {
+ *     method: 'POST',
+ *     headers: {
+ *       'x-api-key': process.env.CLAUDE_API_KEY,
+ *       'anthropic-version': '2023-06-01',
+ *       'content-type': 'application/json',
+ *     },
+ *     body: JSON.stringify({
+ *       model: "claude-3-5-sonnet-20241022",
+ *       max_tokens: 4000,
+ *       messages: [
+ *         { 
+ *           role: "user", 
+ *           content: createPrompt(sectionType, requirements, imageBase64) 
+ *         }
+ *       ]
+ *     }),
+ *   });
+ *
+ *   const data = await response.json();
+ *   return Response.json({ generatedCode: data.content[0].text });
  * }
+ * ```
  */
 export async function generateShopifyCode(
   sectionType: string,
   requirements: string,
   imageDescriptions: string
-) {
-  try {
-    const apiKey = import.meta.env.VITE_CLAUDE_API_KEY;
-    
-    if (!apiKey) {
-      console.warn('Claude API key is missing. Please create a .env file in your project root with VITE_CLAUDE_API_KEY=your_api_key');
-      // Fall back to mock response if API key is missing
-      return getMockResponseText(sectionType);
-    }
-    
-    // CORS Error in browser - this would need a backend proxy in production
-    // The following code is included to demonstrate the intended implementation
-    // but will fail due to CORS, falling back to mock response
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 4000,
-          messages: [
-            { 
-              role: "user", 
-              content: createPrompt(sectionType, requirements, imageDescriptions) 
-            }
-          ]
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Error calling Claude API');
-      }
-
-      const data = await response.json();
-      return data.content[0].text;
-    } catch (error) {
-      console.error('Error generating code:', error);
-      // Expected to fail in browser due to CORS - return mock response
-      return getMockResponseText(sectionType);
-    }
-  } catch (error) {
-    console.error('Error generating code:', error);
-    // Important: Return mock response when API call fails (e.g. CORS error)
-    return getMockResponseText(sectionType);
-  }
+): Promise<string> {
+  // Always return mock response since we can't call Claude API directly due to CORS
+  console.info('CORS restrictions prevent direct API calls - using mock data');
+  return getMockResponseText(sectionType);
 }
 
 // Function to create mock response for demonstration purposes

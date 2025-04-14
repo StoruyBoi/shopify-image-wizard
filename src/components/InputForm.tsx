@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ImageOptions } from './OptionsSelector';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { InfoCircle } from 'lucide-react';
 
 interface InputFormProps {
   selectedOptions: ImageOptions;
@@ -10,7 +10,7 @@ interface InputFormProps {
 }
 
 const InputForm: React.FC<InputFormProps> = ({ selectedOptions, onSubmit }) => {
-  const [requirements, setRequirements] = React.useState<string>('');
+  const [requirements, setRequirements] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setRequirements(e.target.value);
@@ -36,6 +36,14 @@ const InputForm: React.FC<InputFormProps> = ({ selectedOptions, onSubmit }) => {
           className="w-full p-2 rounded-md border bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base resize-none"
           placeholder="Enter specific requirements for your section (optional)"
         />
+        
+        <div className="mt-3 p-3 bg-blue-50/30 border border-blue-200 rounded-md flex items-start gap-2 text-sm">
+          <InfoCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+          <div className="text-blue-700">
+            <p className="font-medium mb-1">Demo Mode Active</p>
+            <p>Due to CORS restrictions, this demo uses mock responses instead of actual Claude API calls.</p>
+          </div>
+        </div>
       </div>
 
       <Button

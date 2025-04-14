@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Bot, AlertCircle, Terminal } from 'lucide-react';
+import { Loader2, Bot, AlertCircle, Terminal, Server } from 'lucide-react';
 import CodePreview from './CodePreview';
 import { Skeleton } from './ui/skeleton';
 
@@ -123,16 +123,22 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
                 <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm text-yellow-700 font-medium mb-2">
-                    Demo Mode: Using Sample Code
+                    CORS Limitation: Using Mock Code
                   </p>
                   <p className="text-sm text-yellow-700">
-                    This demo is using sample code due to CORS restrictions. In a production environment, 
-                    you would need a backend proxy server to make requests to the Claude API.
+                    This demo is using sample code due to CORS restrictions that prevent browser-based 
+                    applications from directly calling the Claude API.
                   </p>
                   <div className="mt-3 p-3 bg-white/60 rounded border border-yellow-100 text-xs font-mono text-yellow-800">
-                    <p className="mb-1"><span className="font-semibold">Frontend:</span> React app (localhost:8080)</p>
-                    <p className="mb-1"><span className="font-semibold">Backend Proxy:</span> Simple Express server</p>
-                    <p><span className="font-semibold">API:</span> Claude API (api.anthropic.com)</p>
+                    <p className="mb-1 flex items-center gap-1.5">
+                      <Server className="h-3.5 w-3.5" />
+                      <span>To use the actual Claude API, you would need:</span>
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 mt-1">
+                      <li>A server-side API proxy (Node.js, Next.js API routes, etc.)</li>
+                      <li>Server environment to store your API keys securely</li>
+                      <li>Backend to handle API requests without CORS issues</li>
+                    </ul>
                   </div>
                 </div>
               </div>
