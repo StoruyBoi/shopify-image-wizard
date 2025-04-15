@@ -25,25 +25,24 @@ jobs:
         run: npm run build
 
       - name: Deploy to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: ${{ secrets.HOSTINGER_SERVER }}
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
-          server-dir: ${{ secrets.HOSTINGER_SERVER_DIR }}
+          port: 21 # ADDED: Specify the port
+          server-dir: ${{ secrets.HOSTINGER_SERVER_DIR }} #FIXED: Indentation
           local-dir: build/
-          delete-files: true
+          dangerous-clean-slate: true #ADDED: delete old files
       - name: Upload PHP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
             server: ${{ secrets.HOSTINGER_SERVER }}
             username: ${{ secrets.HOSTINGER_USERNAME }}
             password: ${{ secrets.HOSTINGER_PASSWORD }}
+            port: 21 #ADDED: Specify the port
             server-dir: ${{ secrets.HOSTINGER_SERVER_DIR }}/
             local-dir: backend/
-            delete-files: true
+            dangerous-clean-slate: true #ADDED: delete old files
       - name: Set Environment Variable
-        run: |
-          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" > .env
-          cat .env
-        working-directory: ${{ secrets.HOSTINGER_SERVER_DIR }}
+        run: echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" > ${{ secrets.HOSTINGER_SERVER_DIR }}/.env #FIXED: set in correct location
