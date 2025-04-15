@@ -23,7 +23,7 @@ jobs:
 
       - name: Build React app
         run: npm run build
-
+      
       - name: Deploy to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
