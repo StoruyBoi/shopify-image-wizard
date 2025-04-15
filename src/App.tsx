@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +9,9 @@ import { SidebarProvider } from "./components/ui/sidebar";
 import { createContext, useState, useEffect, useContext } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { supabase } from "./supabase";
+import { supabase } from "./lib/supabase";
+import { Session, User } from '@supabase/supabase-js';
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 

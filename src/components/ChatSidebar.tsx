@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2 } from 'lucide-react';
+import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2, LogIn } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { 
@@ -20,6 +21,7 @@ import { getAllChats, createNewChat, clearAllChats } from '@/services/chatHistor
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/hooks/use-user';
+import { supabase } from '@/lib/supabase';
 
 interface ChatHistoryItem {
   id: string;
