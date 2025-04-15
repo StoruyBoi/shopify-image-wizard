@@ -6,12 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { SidebarProvider } from "./components/ui/sidebar";
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { supabase } from "./lib/supabase";
 import { Session, User } from '@supabase/supabase-js';
-import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +27,8 @@ interface UserContextType {
   }>>;
   activeChat: string | null;
   setActiveChat: React.Dispatch<React.SetStateAction<string | null>>;
+  user: User | null;
+  session: Session | null;
 }
 
 export const UserContext = createContext<UserContextType>({
@@ -36,29 +37,24 @@ export const UserContext = createContext<UserContextType>({
   userCredits: { current: 3, max: 3 },
   setUserCredits: () => {},
   activeChat: null,
-  setActiveChat: () => {}
+  setActiveChat: () => {},
+  user: null,
+  session: null
 });
-
-export const useUser = () => useContext(UserContext);
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const stored = localStorage.getItem('isLoggedIn');
-    return stored ? JSON.parse(stored) : false;
-  });
-  
-  const [userCredits, setUserCredits] = useState(() => {
-    const stored = localStorage.getItem('userCredits');
-    return stored ? JSON.parse(stored) : { current: 3, max: 3 };
-  });
-  
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [userCredits, setUserCredits] = useState({ current: 3, max: 3 });
   const [activeChat, setActiveChat] = useState<string | null>(null);
   
+  // Set up auth listeners
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
+        setUser(session?.user || null);
         setIsLoggedIn(!!session);
         
         if (session?.user) {
@@ -81,38 +77,80 @@ const App = () => {
       }
     );
 
+    // Check for existing session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setUser(session?.user || null);
       setIsLoggedIn(!!session);
+      
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('credits_used, max_credits')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setUserCredits({
+                current: data.max_credits - data.credits_used,
+                max: data.max_credits
+              });
+            }
+          });
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
   
+  // Reset credits daily
   useEffect(() => {
-    localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
-  }, [isLoggedIn]);
-  
-  useEffect(() => {
-    localStorage.setItem('userCredits', JSON.stringify(userCredits));
-  }, [userCredits]);
-  
-  useEffect(() => {
-    const checkAndResetCredits = () => {
-      const lastReset = localStorage.getItem('lastCreditReset');
-      const now = new Date().setHours(0, 0, 0, 0); // Start of today
+    const checkAndResetCredits = async () => {
+      if (!user) return;
       
-      if (!lastReset || parseInt(lastReset) < now) {
-        setUserCredits(prev => ({ ...prev, current: prev.max }));
-        localStorage.setItem('lastCreditReset', now.toString());
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('credits_used, max_credits, updated_at')
+          .eq('id', user.id)
+          .single();
+        
+        if (data) {
+          const lastUpdate = new Date(data.updated_at);
+          const today = new Date();
+          
+          // Check if last update was before today (different day)
+          if (lastUpdate.getDate() !== today.getDate() || 
+              lastUpdate.getMonth() !== today.getMonth() || 
+              lastUpdate.getFullYear() !== today.getFullYear()) {
+            
+            // Reset credits
+            const { error } = await supabase
+              .from('profiles')
+              .update({ credits_used: 0, updated_at: new Date().toISOString() })
+              .eq('id', user.id);
+            
+            if (!error) {
+              setUserCredits({
+                current: data.max_credits,
+                max: data.max_credits
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check or reset credits:", error);
       }
     };
     
-    checkAndResetCredits();
-    
-    const interval = setInterval(checkAndResetCredits, 1000 * 60 * 60); // Check every hour
-    return () => clearInterval(interval);
-  }, []);
+    if (isLoggedIn) {
+      checkAndResetCredits();
+      
+      // Check once per hour
+      const interval = setInterval(checkAndResetCredits, 1000 * 60 * 60);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, user]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -124,20 +162,16 @@ const App = () => {
             userCredits, 
             setUserCredits,
             activeChat,
-            setActiveChat
+            setActiveChat,
+            user,
+            session
           }}>
             <SidebarProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route 
-                    path="/" 
-                    element={
-                      <Index />
-                    } 
-                  />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={<Index />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>

@@ -1,16 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Crown, 
   Settings, 
   LogOut, 
-  User, 
+  User,
   Moon, 
   Sun,
   Trash2,
   Mail,
   Key,
-  Globe
+  Globe,
+  Loader2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -36,48 +37,127 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "./ThemeProvider";
 import { useToast } from "@/hooks/use-toast";
 import { clearAllChats } from '@/services/chatHistoryService';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/use-user';
+import { useNavigate } from 'react-router-dom';
 
 const UserSettingsMenu = () => {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { isLoggedIn, setIsLoggedIn, userCredits, setUserCredits } = useUser();
+  const [userProfile, setUserProfile] = useState<{email: string; name?: string} | null>(null);
+  
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('email, name')
+          .eq('id', user.id)
+          .single();
+          
+        if (data) {
+          setUserProfile(data);
+        } else {
+          setUserProfile({
+            email: user.email || '',
+          });
+        }
+      }
+    };
+    
+    if (isLoggedIn) {
+      getProfile();
+    }
+  }, [isLoggedIn]);
   
   const handleThemeToggle = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would connect to your auth system in a real app
-    toast({
-      title: "Login successful",
-      description: "Welcome back!",
-    });
-    setIsLoggedIn(true);
-    setIsLoginDialogOpen(false);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      setIsLoginDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would connect to your auth system in a real app
-    toast({
-      title: "Account created",
-      description: "Welcome to Shopify Image Wizard!",
-    });
-    setIsLoggedIn(true);
-    setIsSignupDialogOpen(false);
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Account created",
+        description: "Please check your email to confirm your account",
+      });
+      
+      setIsSignupDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleClearHistory = () => {
@@ -91,6 +171,38 @@ const UserSettingsMenu = () => {
     }
   };
   
+  // Function to get initials from email or name
+  const getInitials = () => {
+    if (!userProfile) return 'U';
+    
+    if (userProfile.name) {
+      return userProfile.name.charAt(0).toUpperCase();
+    }
+    
+    return userProfile.email.charAt(0).toUpperCase();
+  };
+  
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+
+      if (error) throw error;
+      
+      setIsLoginDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Google login failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
   return (
     <>
       <DropdownMenu>
@@ -98,7 +210,7 @@ const UserSettingsMenu = () => {
           <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
             <Avatar className="h-8 w-8">
               <AvatarImage src="/placeholder.svg" />
-              <AvatarFallback>US</AvatarFallback>
+              <AvatarFallback>{isLoggedIn ? getInitials() : 'U'}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -108,8 +220,8 @@ const UserSettingsMenu = () => {
               <p className="text-sm font-medium">
                 {isLoggedIn ? "User Account" : "Not logged in"}
               </p>
-              {isLoggedIn && (
-                <p className="text-xs text-muted-foreground">user@example.com</p>
+              {isLoggedIn && userProfile && (
+                <p className="text-xs text-muted-foreground">{userProfile.email}</p>
               )}
             </div>
           </DropdownMenuLabel>
@@ -226,21 +338,24 @@ const UserSettingsMenu = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full">Log in</Button>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  'Log in'
+                )}
+              </Button>
             </DialogFooter>
           </form>
           <div className="mt-2 text-center">
             <Button 
               variant="outline" 
               className="w-full mb-2"
-              onClick={() => {
-                toast({
-                  title: "Google login",
-                  description: "Google authentication would be integrated here",
-                });
-                setIsLoggedIn(true);
-                setIsLoginDialogOpen(false);
-              }}
+              onClick={handleGoogleSignIn}
+              disabled={loading}
             >
               <Globe className="mr-2 h-4 w-4" />
               Continue with Google
@@ -253,6 +368,7 @@ const UserSettingsMenu = () => {
                   setIsLoginDialogOpen(false);
                   setIsSignupDialogOpen(true);
                 }}
+                type="button"
               >
                 Sign up
               </button>
@@ -298,21 +414,24 @@ const UserSettingsMenu = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full">Create account</Button>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  'Create account'
+                )}
+              </Button>
             </DialogFooter>
           </form>
           <div className="mt-2 text-center">
             <Button 
               variant="outline" 
               className="w-full mb-2"
-              onClick={() => {
-                toast({
-                  title: "Google signup",
-                  description: "Google authentication would be integrated here",
-                });
-                setIsLoggedIn(true);
-                setIsSignupDialogOpen(false);
-              }}
+              onClick={handleGoogleSignIn}
+              disabled={loading}
             >
               <Globe className="mr-2 h-4 w-4" />
               Sign up with Google
@@ -325,6 +444,7 @@ const UserSettingsMenu = () => {
                   setIsSignupDialogOpen(false);
                   setIsLoginDialogOpen(true);
                 }}
+                type="button"
               >
                 Log in
               </button>

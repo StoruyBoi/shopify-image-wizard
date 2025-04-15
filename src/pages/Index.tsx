@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/App";
+import { useUser } from "@/hooks/use-user";
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
 import OptionsSelector, { ImageOptions } from '@/components/OptionsSelector';
@@ -16,10 +16,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { createNewChat, saveChat, getAllChats } from '@/services/chatHistoryService';
 import { supabase } from '@/lib/supabase';
+import {
+  Dialog as AuthDialog,
+  DialogContent as AuthDialogContent,
+  DialogDescription as AuthDialogDescription,
+  DialogHeader as AuthDialogHeader,
+  DialogTitle as AuthDialogTitle,
+} from "@/components/ui/dialog";
+import UserSettingsMenu from '@/components/UserSettingsMenu';
 
 const Index = () => {
   const { toast } = useToast();
-  const { userCredits, setUserCredits, isLoggedIn, activeChat, setActiveChat } = useUser();
+  const { userCredits, setUserCredits, isLoggedIn, activeChat, setActiveChat, user } = useUser();
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<ImageOptions>({
@@ -29,6 +37,7 @@ const Index = () => {
   const [generatedCode, setGeneratedCode] = useState<{ code: string; shopifyLiquid: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
   useEffect(() => {
     if (activeChat) {
@@ -59,12 +68,7 @@ const Index = () => {
 
   const handleFormSubmit = async (requirements: string) => {
     if (!isLoggedIn) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to generate code",
-        variant: "destructive",
-      });
-      navigate('/auth');
+      setIsAuthDialogOpen(true);
       return;
     }
 
@@ -95,61 +99,63 @@ const Index = () => {
       setGeneratedImageUrl(uploadedImage.previewUrl);
       setGeneratedCode(result);
       
-      const { error: creditsError } = await supabase
-        .from('profiles')
-        .update({ credits_used: userCredits.max - (userCredits.current - 1) })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+      if (user) {
+        const { error: creditsError } = await supabase
+          .from('profiles')
+          .update({ credits_used: userCredits.max - (userCredits.current - 1) })
+          .eq('id', user.id);
 
-      if (creditsError) throw creditsError;
-      
-      setUserCredits(prev => ({
-        ...prev,
-        current: Math.max(0, prev.current - 1)
-      }));
-      
-      if (!activeChat) {
-        const title = `${selectedOptions.purpose} design`;
+        if (creditsError) throw creditsError;
         
-        const { data: chatData, error: chatError } = await supabase
-          .from('chat_history')
-          .insert([
-            { title, date: 'Today', user_id: (await supabase.auth.getUser()).data.user?.id }
-          ])
-          .select()
-          .single();
-
-        if (chatError) throw chatError;
+        setUserCredits(prev => ({
+          ...prev,
+          current: Math.max(0, prev.current - 1)
+        }));
         
-        if (chatData) {
-          setActiveChat(chatData.id);
+        if (!activeChat) {
+          const title = `${selectedOptions.purpose} design`;
           
-          const { error: messagesError } = await supabase
-            .from('chat_messages')
+          const { data: chatData, error: chatError } = await supabase
+            .from('chat_history')
             .insert([
-              {
-                chat_id: chatData.id,
-                role: 'user',
-                content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}`
-              },
-              {
-                chat_id: chatData.id,
-                role: 'assistant',
-                content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.`
-              }
-            ]);
+              { title, date: 'Today', user_id: user.id }
+            ])
+            .select()
+            .single();
 
-          if (messagesError) throw messagesError;
+          if (chatError) throw chatError;
           
-          const { error: imageError } = await supabase
-            .from('chat_images')
-            .insert([
-              {
-                chat_id: chatData.id,
-                image_url: uploadedImage.previewUrl
-              }
-            ]);
+          if (chatData) {
+            setActiveChat(chatData.id);
+            
+            const { error: messagesError } = await supabase
+              .from('chat_messages')
+              .insert([
+                {
+                  chat_id: chatData.id,
+                  role: 'user',
+                  content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}`
+                },
+                {
+                  chat_id: chatData.id,
+                  role: 'assistant',
+                  content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.`
+                }
+              ]);
 
-          if (imageError) throw imageError;
+            if (messagesError) throw messagesError;
+            
+            const { error: imageError } = await supabase
+              .from('chat_images')
+              .insert([
+                {
+                  chat_id: chatData.id,
+                  image_url: uploadedImage.previewUrl
+                }
+              ]);
+
+            if (imageError) throw imageError;
+          }
         }
       }
       
@@ -312,7 +318,17 @@ const Index = () => {
                       To get the best results, upload a clear image and provide detailed requirements.
                       {!isLoggedIn && (
                         <span className="block mt-1 text-primary">
-                          <a href="#" className="hover:underline">Sign in</a> or <a href="#" className="hover:underline">create an account</a> to save your history.
+                          <button 
+                            onClick={() => setIsAuthDialogOpen(true)} 
+                            className="hover:underline"
+                          >
+                            Sign in
+                          </button> or <button 
+                            onClick={() => setIsAuthDialogOpen(true)} 
+                            className="hover:underline"
+                          >
+                            create an account
+                          </button> to save your history.
                         </span>
                       )}
                     </p>
@@ -331,6 +347,26 @@ const Index = () => {
           </div>
         </footer>
       </SidebarInset>
+      
+      {/* Authentication Dialog */}
+      <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <AuthDialogContent className="sm:max-w-[425px]">
+          <AuthDialogHeader>
+            <AuthDialogTitle>Authentication Required</AuthDialogTitle>
+            <AuthDialogDescription>
+              Please sign in or create an account to use this feature
+            </AuthDialogDescription>
+          </AuthDialogHeader>
+          
+          <div className="py-6">
+            <UserSettingsMenu />
+          </div>
+          
+          <p className="text-sm text-center text-muted-foreground">
+            Sign in to track your credits and save your generated code
+          </p>
+        </AuthDialogContent>
+      </AuthDialog>
       
       <Dialog open={isUpgradeOpen && userCredits.current === 0} onOpenChange={setIsUpgradeOpen}>
         <DialogContent>
