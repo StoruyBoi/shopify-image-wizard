@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Battery, Info, Crown } from 'lucide-react';
+import { Battery, Info, Crown, Check } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/hooks/use-user";
 
 interface CreditsDisplayProps {
   currentCredits: number;
@@ -30,6 +32,9 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
 }) => {
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'business'>('free');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { setUserCredits, user } = useUser();
   
   // Calculate percentage for visual display
   const percentage = Math.round((currentCredits / maxCredits) * 100);
@@ -49,10 +54,59 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
 
   const handleUpgradeClick = () => {
     setIsUpgradeOpen(true);
-    toast({
-      title: "Pro Features",
-      description: "Upgrade to unlock more credits and features!",
-    });
+    setSelectedPlan('pro'); // Default to pro plan
+  };
+  
+  const handleUpgradePlan = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upgrade your plan.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsUpdating(true);
+    
+    try {
+      // Set the new max credits based on the selected plan
+      const newMaxCredits = selectedPlan === 'free' ? 3 : selectedPlan === 'pro' ? 50 : 999;
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          plan: selectedPlan,
+          max_credits: newMaxCredits,
+          // Reset credits_used to give them full credits immediately
+          credits_used: 0
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update UI state
+      setUserCredits({
+        current: newMaxCredits,
+        max: newMaxCredits
+      });
+      
+      toast({
+        title: "Plan Upgraded",
+        description: `You've successfully upgraded to the ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan!`,
+      });
+      
+      setIsUpgradeOpen(false);
+    } catch (error) {
+      console.error("Error upgrading plan:", error);
+      toast({
+        title: "Upgrade Failed",
+        description: "There was a problem upgrading your plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
   
   return (
@@ -102,7 +156,10 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="rounded-lg border p-4">
+            <div 
+              className={`rounded-lg border p-4 relative cursor-pointer transition-all ${selectedPlan === 'free' ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
+              onClick={() => setSelectedPlan('free')}
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/10 p-1.5 rounded-full">
@@ -110,7 +167,11 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
                   </div>
                   <h3 className="font-medium">Free Plan</h3>
                 </div>
-                <span className="text-sm text-muted-foreground">Current</span>
+                {selectedPlan === 'free' && (
+                  <div className="text-primary bg-primary/10 p-1 rounded-full">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -124,7 +185,10 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4 bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-md transition-shadow">
+            <div 
+              className={`rounded-lg border p-4 bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer transition-all ${selectedPlan === 'pro' ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
+              onClick={() => setSelectedPlan('pro')}
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/20 p-1.5 rounded-full">
@@ -135,6 +199,11 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
                 <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   Popular
                 </span>
+                {selectedPlan === 'pro' && (
+                  <div className="text-primary bg-primary/10 p-1 rounded-full">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">$9.99/month</p>
@@ -144,7 +213,10 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
               </div>
             </div>
 
-            <div className="rounded-lg border p-4 hover:shadow-md transition-shadow">
+            <div 
+              className={`rounded-lg border p-4 cursor-pointer transition-all ${selectedPlan === 'business' ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
+              onClick={() => setSelectedPlan('business')}
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
                   <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-1.5 rounded-full">
@@ -152,6 +224,11 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
                   </div>
                   <h3 className="font-medium">Business Plan</h3>
                 </div>
+                {selectedPlan === 'business' && (
+                  <div className="text-primary bg-primary/10 p-1 rounded-full">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">$24.99/month</p>
@@ -165,15 +242,10 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
 
           <Button 
             className="w-full"
-            onClick={() => {
-              toast({
-                title: "Coming Soon",
-                description: "Upgrade functionality will be available soon!",
-              });
-              setIsUpgradeOpen(false);
-            }}
+            onClick={handleUpgradePlan}
+            disabled={isUpdating}
           >
-            Upgrade Now
+            {isUpdating ? 'Upgrading...' : 'Upgrade Now'}
           </Button>
         </DialogContent>
       </Dialog>

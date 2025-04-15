@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2, LogIn } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2, LogIn, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { 
   Sheet,
@@ -12,11 +11,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,8 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/hooks/use-user';
 import { supabase } from '@/lib/supabase';
 import UserSettingsMenu from './UserSettingsMenu';
@@ -34,6 +28,7 @@ interface ChatHistoryItem {
   id: string;
   title: string;
   date: string;
+  content?: string;
 }
 
 const ChatSidebar = () => {
@@ -41,9 +36,9 @@ const ChatSidebar = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = toast();
   const navigate = useNavigate();
-  const location = useLocation();
   const { isLoggedIn, activeChat, setActiveChat, user } = useUser();
 
   useEffect(() => {
@@ -54,7 +49,15 @@ const ChatSidebar = () => {
     }
   }, [isLoggedIn, user]);
 
+  useEffect(() => {
+    // Load chat details when activeChat changes
+    if (activeChat) {
+      loadChatDetails(activeChat);
+    }
+  }, [activeChat]);
+
   const fetchChatHistory = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('chat_history')
@@ -74,6 +77,57 @@ const ChatSidebar = () => {
         description: 'Failed to load chat history',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadChatDetails = async (chatId: string) => {
+    setIsLoading(true);
+    try {
+      // Get chat messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true });
+        
+      if (messagesError) throw messagesError;
+      
+      // Get chat images
+      const { data: imageData, error: imageError } = await supabase
+        .from('chat_images')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true });
+        
+      if (imageError) throw imageError;
+      
+      // Get chat details
+      const { data: chatData, error: chatError } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('id', chatId)
+        .single();
+        
+      if (chatError) throw chatError;
+      
+      // Now we have all the data for this chat, update the UI accordingly
+      // This would normally update some state that the main chat interface uses
+      toast({
+        title: 'Chat loaded',
+        description: `Loaded: ${chatData.title}`,
+      });
+      
+    } catch (error) {
+      console.error('Error loading chat details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load chat details',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -93,8 +147,27 @@ const ChatSidebar = () => {
 
   const handleDeleteChat = async () => {
     if (!chatToDelete) return;
+    
+    setIsLoading(true);
 
     try {
+      // Delete chat messages first
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('chat_id', chatToDelete);
+      
+      if (messagesError) throw messagesError;
+      
+      // Delete chat images
+      const { error: imagesError } = await supabase
+        .from('chat_images')
+        .delete()
+        .eq('chat_id', chatToDelete);
+      
+      if (imagesError) throw imagesError;
+      
+      // Finally delete the chat entry
       const { error } = await supabase
         .from('chat_history')
         .delete()
@@ -122,6 +195,7 @@ const ChatSidebar = () => {
     } finally {
       setIsDeleteDialogOpen(false);
       setChatToDelete(null);
+      setIsLoading(false);
     }
   };
 
@@ -142,6 +216,7 @@ const ChatSidebar = () => {
             onDeleteClick={openDeleteDialog}
             isLoggedIn={isLoggedIn}
             onLoginClick={() => setIsLoginDialogOpen(true)}
+            isLoading={isLoading}
           />
           <SheetClose className="absolute right-4 top-4">
             <X className="h-4 w-4" />
@@ -158,6 +233,7 @@ const ChatSidebar = () => {
           onDeleteClick={openDeleteDialog}
           isLoggedIn={isLoggedIn}
           onLoginClick={() => setIsLoginDialogOpen(true)}
+          isLoading={isLoading}
         />
       </div>
 
@@ -177,8 +253,14 @@ const ChatSidebar = () => {
             <Button 
               variant="destructive" 
               onClick={handleDeleteChat}
+              disabled={isLoading}
             >
-              Delete
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -194,7 +276,7 @@ const ChatSidebar = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-6">
-            <UserSettingsMenu />
+            <UserSettingsMenu onClose={() => setIsLoginDialogOpen(false)} />
           </div>
         </DialogContent>
       </Dialog>
@@ -210,7 +292,8 @@ const SidebarContent = ({
   onChatSelect, 
   onDeleteClick,
   isLoggedIn,
-  onLoginClick
+  onLoginClick,
+  isLoading
 }: { 
   chatHistory: ChatHistoryItem[];
   activeChat: string | null;
@@ -219,6 +302,7 @@ const SidebarContent = ({
   onDeleteClick: (e: React.MouseEvent, chatId: string) => void;
   isLoggedIn: boolean;
   onLoginClick: () => void;
+  isLoading: boolean;
 }) => {
   return (
     <div className="flex flex-col h-full">
@@ -233,8 +317,12 @@ const SidebarContent = ({
             size="sm"
             className="w-8 h-8 p-0"
             onClick={onNewChat}
+            disabled={isLoading}
           >
-            <Plus className="h-4 w-4" />
+            {isLoading ? 
+              <Loader2 className="h-4 w-4 animate-spin" /> : 
+              <Plus className="h-4 w-4" />
+            }
           </Button>
         ) : (
           <Button
@@ -250,6 +338,12 @@ const SidebarContent = ({
       </div>
 
       <div className="flex-1 overflow-auto py-2">
+        {isLoading && chatHistory.length === 0 && (
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+        
         {isLoggedIn ? (
           chatHistory.length > 0 ? (
             <ul className="space-y-1 px-2">
@@ -261,22 +355,24 @@ const SidebarContent = ({
                   }`}
                   onClick={() => onChatSelect(chat.id)}
                 >
-                  <div className="text-sm truncate">
+                  <div className="text-sm truncate flex-1">
                     <p className="font-medium truncate">{chat.title}</p>
                     <p className="text-xs text-muted-foreground">{chat.date}</p>
                   </div>
-                  {activeChat === chat.id && (
-                    <button 
-                      className="text-muted-foreground hover:text-destructive p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => onDeleteClick(e, chat.id)}
-                    >
+                  <button 
+                    className="text-muted-foreground hover:text-destructive p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => onDeleteClick(e, chat.id)}
+                    disabled={isLoading}
+                  >
+                    {isLoading && activeChat === chat.id ? 
+                      <Loader2 className="h-4 w-4 animate-spin" /> : 
                       <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+                    }
+                  </button>
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : !isLoading ? (
             <div className="text-center px-4 py-8">
               <p className="text-muted-foreground text-sm mb-4">No chat history yet</p>
               <Button variant="outline" size="sm" onClick={onNewChat}>
@@ -284,7 +380,7 @@ const SidebarContent = ({
                 New Chat
               </Button>
             </div>
-          )
+          ) : null
         ) : (
           <div className="text-center px-4 py-8">
             <p className="text-muted-foreground text-sm mb-4">Sign in to view your chat history</p>
@@ -300,15 +396,8 @@ const SidebarContent = ({
         <Button 
           variant="outline" 
           size="sm" 
-          className="w-full justify-start text-muted-foreground"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
           className="w-full justify-start text-primary"
+          onClick={onLoginClick}
         >
           <Crown className="h-4 w-4 mr-2" />
           Upgrade to Pro

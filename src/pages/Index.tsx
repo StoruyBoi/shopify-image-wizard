@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
@@ -14,19 +14,11 @@ import { Wand2, Sparkles, Crown } from 'lucide-react';
 import { generateCodeFromImage } from '@/services/claudeService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { createNewChat, saveChat, getAllChats } from '@/services/chatHistoryService';
 import { supabase } from '@/lib/supabase';
-import {
-  Dialog as AuthDialog,
-  DialogContent as AuthDialogContent,
-  DialogDescription as AuthDialogDescription,
-  DialogHeader as AuthDialogHeader,
-  DialogTitle as AuthDialogTitle,
-} from "@/components/ui/dialog";
 import UserSettingsMenu from '@/components/UserSettingsMenu';
 
 const Index = () => {
-  const { toast } = useToast();
+  const { toast } = toast();
   const { userCredits, setUserCredits, isLoggedIn, activeChat, setActiveChat, user } = useUser();
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
@@ -38,24 +30,79 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  // Fix pointer-events issue by setting loading state on initial page load
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     if (activeChat) {
-      const chats = getAllChats();
-      const chat = chats.find(c => c.id === activeChat);
-      if (chat && chat.messages && chat.messages.length > 0) {
-        toast({
-          title: "Chat loaded",
-          description: `Loaded: ${chat.title}`,
-        });
-      }
+      loadChatData();
     }
-  }, [activeChat, toast]);
+  }, [activeChat]);
+
+  const loadChatData = async () => {
+    if (!activeChat) return;
+    
+    try {
+      // Get chat details
+      const { data: chatDetails, error: chatError } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('id', activeChat)
+        .single();
+        
+      if (chatError) throw chatError;
+      
+      // Get chat images (if any)
+      const { data: imageData, error: imageError } = await supabase
+        .from('chat_images')
+        .select('*')
+        .eq('chat_id', activeChat)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (imageError) throw imageError;
+      
+      // Get chat messages
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('chat_id', activeChat)
+        .order('created_at', { ascending: true });
+        
+      if (messagesError) throw messagesError;
+      
+      // Update UI with loaded data
+      if (imageData && imageData.length > 0) {
+        setGeneratedImageUrl(imageData[0].image_url);
+      }
+      
+      toast({
+        title: "Chat loaded",
+        description: `Loaded: ${chatDetails.title}`,
+      });
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      toast({
+        title: "Error loading chat",
+        description: "Failed to load chat data",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleImageUpload = (file: File, previewUrl: string) => {
     setUploadedImage({ file, previewUrl });
     setGeneratedImageUrl(null);
     setGeneratedCode(null);
+    setProcessingError(null);
     toast({
       title: "Image uploaded successfully",
       description: `File: ${file.name}`,
@@ -88,6 +135,7 @@ const Index = () => {
 
     setIsProcessing(true);
     setGeneratedCode(null);
+    setProcessingError(null);
     
     try {
       const result = await generateCodeFromImage(
@@ -163,17 +211,31 @@ const Index = () => {
         title: "Code generated successfully",
         description: "Your Shopify Liquid code has been created",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating code:", error);
+      setProcessingError(error.message || "There was an error generating your code");
       toast({
         title: "Generation failed",
-        description: "There was an error generating your code. Please try again.",
+        description: error.message || "There was an error generating your code. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
     }
   };
+
+  if (isPageLoading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-12 w-12 text-primary animate-spin relative">
+            <Sparkles className="h-12 w-12 text-primary" />
+          </div>
+          <p className="text-lg font-medium">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -223,6 +285,7 @@ const Index = () => {
                         onClick={() => {
                           setUploadedImage(null);
                           setGeneratedCode(null);
+                          setProcessingError(null);
                         }}
                         className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
@@ -283,9 +346,10 @@ const Index = () => {
                     previewUrl={generatedImageUrl} 
                     isProcessing={isProcessing} 
                     generatedCode={generatedCode}
+                    error={processingError}
                   />
 
-                  {!uploadedImage && !generatedImageUrl && !isProcessing && (
+                  {!uploadedImage && !generatedImageUrl && !isProcessing && !processingError && (
                     <div className="rounded-lg border p-8 text-center glass">
                       <div className="flex justify-center mb-4">
                         <div className="p-4 rounded-full bg-secondary">
@@ -349,24 +413,24 @@ const Index = () => {
       </SidebarInset>
       
       {/* Authentication Dialog */}
-      <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-        <AuthDialogContent className="sm:max-w-[425px]">
-          <AuthDialogHeader>
-            <AuthDialogTitle>Authentication Required</AuthDialogTitle>
-            <AuthDialogDescription>
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Authentication Required</DialogTitle>
+            <DialogDescription>
               Please sign in or create an account to use this feature
-            </AuthDialogDescription>
-          </AuthDialogHeader>
+            </DialogDescription>
+          </DialogHeader>
           
           <div className="py-6">
-            <UserSettingsMenu />
+            <UserSettingsMenu onClose={() => setIsAuthDialogOpen(false)} />
           </div>
           
           <p className="text-sm text-center text-muted-foreground">
             Sign in to track your credits and save your generated code
           </p>
-        </AuthDialogContent>
-      </AuthDialog>
+        </DialogContent>
+      </Dialog>
       
       <Dialog open={isUpgradeOpen && userCredits.current === 0} onOpenChange={setIsUpgradeOpen}>
         <DialogContent>

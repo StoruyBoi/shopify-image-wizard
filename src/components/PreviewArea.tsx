@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, Bot, AlertCircle, Terminal, Server, ArrowRight } from 'lucide-react';
+import { Loader2, Bot, AlertCircle, Terminal } from 'lucide-react';
 import CodePreview from './CodePreview';
 import { Skeleton } from './ui/skeleton';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface PreviewAreaProps {
   previewUrl: string | null;
@@ -11,12 +12,14 @@ interface PreviewAreaProps {
     code: string;
     shopifyLiquid: string;
   } | null;
+  error?: string | null;
 }
 
 const PreviewArea: React.FC<PreviewAreaProps> = ({ 
   previewUrl,
   isProcessing,
-  generatedCode
+  generatedCode,
+  error
 }) => {
   const [displayCode, setDisplayCode] = useState<string>('');
   const [isGeneratingAnimation, setIsGeneratingAnimation] = useState(false);
@@ -67,7 +70,8 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
     }
   }, [isProcessing, generatedCode, isGeneratingAnimation]);
 
-  if (!isProcessing && !generatedCode) return null;
+  // Show nothing if not processing and no generated code or error
+  if (!isProcessing && !generatedCode && !error) return null;
 
   return (
     <div className="space-y-6 rounded-lg border p-5 glass">
@@ -105,8 +109,16 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
         </div>
       )}
 
+      {/* Error State */}
+      {error && !isProcessing && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Code Preview */}
-      {generatedCode && (
+      {generatedCode && !isProcessing && (
         <div className="space-y-5">
           <div className="flex items-start space-x-3">
             <div className="bg-primary/20 rounded-full p-3 flex-shrink-0">
@@ -118,39 +130,6 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({
                 I've analyzed your requirements and created Shopify Liquid code that matches your needs.
                 You can copy this code directly into your Shopify theme.
               </p>
-              
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md mb-4 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-yellow-700 font-medium mb-2">
-                    CORS Limitation: Using Mock Code
-                  </p>
-                  <p className="text-sm text-yellow-700">
-                    This demo is using sample code due to CORS restrictions that prevent browser-based 
-                    applications from directly calling the Claude API.
-                  </p>
-                  <div className="mt-3 p-3 bg-white/60 rounded border border-yellow-100 text-xs font-mono text-yellow-800">
-                    <div className="space-y-1">
-                      <p className="flex items-center gap-1.5">
-                        <Server className="h-3.5 w-3.5" />
-                        <span className="font-medium">Next.js Solution:</span>
-                      </p>
-                      <p className="pl-5 flex items-start">
-                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
-                        <span>Create API route at <code>pages/api/claude.js</code></span>
-                      </p>
-                      <p className="pl-5 flex items-start">
-                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
-                        <span>Add Claude API key to <code>.env.local</code></span>
-                      </p>
-                      <p className="pl-5 flex items-start">
-                        <ArrowRight className="h-3 w-3 mt-0.5 mr-1 flex-shrink-0" />
-                        <span>Update client fetch to call your API route</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           
