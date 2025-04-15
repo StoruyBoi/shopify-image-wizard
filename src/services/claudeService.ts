@@ -17,7 +17,7 @@ export async function generateCodeFromImage(
     // Convert image to base64
     const imageUrl = await fileToBase64WithPrefix(imageFile);
     
-    // Call our Supabase Edge Function
+    
     const { data, error } = await supabase.functions.invoke('generate-code', {
       body: { 
         imageUrl, 
