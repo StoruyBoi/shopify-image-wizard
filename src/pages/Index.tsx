@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useNavigate } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/App";
 import Header from '@/components/Header';
@@ -13,10 +13,12 @@ import { generateCodeFromImage } from '@/services/claudeService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { createNewChat, saveChat, getAllChats } from '@/services/chatHistoryService';
+import { supabase } from '@/lib/supabase';
 
 const Index = () => {
   const { toast } = useToast();
   const { userCredits, setUserCredits, isLoggedIn, activeChat, setActiveChat } = useUser();
+  const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<ImageOptions>({
     purpose: 'product'
@@ -54,6 +56,16 @@ const Index = () => {
   };
 
   const handleFormSubmit = async (requirements: string) => {
+    if (!isLoggedIn) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to generate code",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     if (!uploadedImage) {
       toast({
         title: "No image uploaded",
@@ -81,6 +93,13 @@ const Index = () => {
       setGeneratedImageUrl(uploadedImage.previewUrl);
       setGeneratedCode(result);
       
+      const { error: creditsError } = await supabase
+        .from('profiles')
+        .update({ credits_used: userCredits.max - (userCredits.current - 1) })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (creditsError) throw creditsError;
+      
       setUserCredits(prev => ({
         ...prev,
         current: Math.max(0, prev.current - 1)
@@ -88,26 +107,47 @@ const Index = () => {
       
       if (!activeChat) {
         const title = `${selectedOptions.purpose} design`;
-        const newChat = createNewChat(title);
-        setActiveChat(newChat.id);
         
-        newChat.messages = [
-          { role: 'user', content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}` },
-          { role: 'assistant', content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.` }
-        ];
-        saveChat(newChat);
-      } else {
-        const chats = getAllChats();
-        const chat = chats.find(c => c.id === activeChat);
-        if (chat) {
-          if (!chat.messages) {
-            chat.messages = [];
-          }
-          chat.messages.push(
-            { role: 'user', content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}` },
-            { role: 'assistant', content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.` }
-          );
-          saveChat(chat);
+        const { data: chatData, error: chatError } = await supabase
+          .from('chat_history')
+          .insert([
+            { title, date: 'Today', user_id: (await supabase.auth.getUser()).data.user?.id }
+          ])
+          .select()
+          .single();
+
+        if (chatError) throw chatError;
+        
+        if (chatData) {
+          setActiveChat(chatData.id);
+          
+          const { error: messagesError } = await supabase
+            .from('chat_messages')
+            .insert([
+              {
+                chat_id: chatData.id,
+                role: 'user',
+                content: `Generate Shopify code for ${selectedOptions.purpose} from uploaded image. Requirements: ${requirements}`
+              },
+              {
+                chat_id: chatData.id,
+                role: 'assistant',
+                content: `Generated HTML and Liquid template for ${selectedOptions.purpose}.`
+              }
+            ]);
+
+          if (messagesError) throw messagesError;
+          
+          const { error: imageError } = await supabase
+            .from('chat_images')
+            .insert([
+              {
+                chat_id: chatData.id,
+                image_url: uploadedImage.previewUrl
+              }
+            ]);
+
+          if (imageError) throw imageError;
         }
       }
       

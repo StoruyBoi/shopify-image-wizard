@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -20,6 +19,7 @@ import {
 import { getAllChats, createNewChat, clearAllChats } from '@/services/chatHistoryService';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '@/hooks/use-user';
 
 interface ChatHistoryItem {
   id: string;
@@ -33,12 +33,30 @@ const ChatSidebar = () => {
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { isLoggedIn } = useUser();
   const currentPath = location.pathname;
   
   useEffect(() => {
-    // Load chat history from localStorage
-    setChatHistory(getAllChats());
-  }, []);
+    if (isLoggedIn) {
+      // Fetch chat history from Supabase
+      supabase
+        .from('chat_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching chat history:', error);
+            return;
+          }
+          if (data) {
+            setChatHistory(data);
+          }
+        });
+    } else {
+      // Use local storage for non-authenticated users
+      setChatHistory(getAllChats());
+    }
+  }, [isLoggedIn]);
 
   // Group chat history by date
   const groupedChats = chatHistory.reduce<Record<string, ChatHistoryItem[]>>((acc, chat) => {
@@ -97,32 +115,44 @@ const ChatSidebar = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="fixed top-4 left-4 z-50 lg:hidden"
+          className="fixed top-4 left-4 z-50 lg:hidden hover:bg-accent"
           onClick={() => setOpenMobile(true)}
         >
           <PanelLeft className="h-5 w-5" />
         </Button>
       )}
       
-      <Sidebar>
+      <Sidebar className="transition-all duration-300">
         <SidebarHeader className="flex flex-col gap-0 p-0">
           <div className="flex items-center justify-between p-3 border-b">
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg">Shopify Wizard</span>
             </div>
-            <SidebarTrigger />
+            <SidebarTrigger className="hover:bg-accent rounded-md p-1" />
           </div>
           
           <div className="p-2">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2" 
-              size="sm"
-              onClick={handleNewChat}
-            >
-              <Plus className="h-4 w-4" />
-              <span>New chat</span>
-            </Button>
+            {isLoggedIn ? (
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 hover:bg-accent" 
+                size="sm"
+                onClick={handleNewChat}
+              >
+                <Plus className="h-4 w-4" />
+                <span>New chat</span>
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2 hover:bg-accent" 
+                size="sm"
+                onClick={() => navigate('/auth')}
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign in to start</span>
+              </Button>
+            )}
           </div>
         </SidebarHeader>
         

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,11 +8,10 @@ import { SidebarProvider } from "./components/ui/sidebar";
 import { createContext, useState, useEffect, useContext } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { supabase } from "./supabase";
 
-// Create a client
 const queryClient = new QueryClient();
 
-// User context to manage authentication state
 interface UserContextType {
   isLoggedIn: boolean;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
@@ -41,22 +39,53 @@ export const UserContext = createContext<UserContextType>({
 export const useUser = () => useContext(UserContext);
 
 const App = () => {
-  // Check local storage for login state
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const stored = localStorage.getItem('isLoggedIn');
     return stored ? JSON.parse(stored) : false;
   });
   
-  // Check local storage for credits
   const [userCredits, setUserCredits] = useState(() => {
     const stored = localStorage.getItem('userCredits');
     return stored ? JSON.parse(stored) : { current: 3, max: 3 };
   });
   
-  // Track active chat
   const [activeChat, setActiveChat] = useState<string | null>(null);
   
-  // Persist login state and credits to localStorage
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setIsLoggedIn(!!session);
+        
+        if (session?.user) {
+          setTimeout(() => {
+            supabase
+              .from('profiles')
+              .select('credits_used, max_credits')
+              .eq('id', session.user.id)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  setUserCredits({
+                    current: data.max_credits - data.credits_used,
+                    max: data.max_credits
+                  });
+                }
+              });
+          }, 0);
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+  
   useEffect(() => {
     localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
   }, [isLoggedIn]);
@@ -65,7 +94,6 @@ const App = () => {
     localStorage.setItem('userCredits', JSON.stringify(userCredits));
   }, [userCredits]);
   
-  // Reset credits daily
   useEffect(() => {
     const checkAndResetCredits = () => {
       const lastReset = localStorage.getItem('lastCreditReset');
@@ -79,7 +107,6 @@ const App = () => {
     
     checkAndResetCredits();
     
-    // Check daily
     const interval = setInterval(checkAndResetCredits, 1000 * 60 * 60); // Check every hour
     return () => clearInterval(interval);
   }, []);
@@ -101,8 +128,13 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route 
+                    path="/" 
+                    element={
+                      <Index />
+                    } 
+                  />
+                  <Route path="/auth" element={<Auth />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
