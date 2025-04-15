@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/hooks/use-user";
 
@@ -30,6 +30,7 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
   currentCredits, 
   maxCredits 
 }) => {
+  const { toast } = useToast();
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'business'>('free');
@@ -59,6 +60,8 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
   
   const handleUpgradePlan = async () => {
     if (!user) {
+      // If user is not logged in, let them view the plans, but show a message
+      // when they try to actually upgrade
       toast({
         title: "Authentication Required",
         description: "Please log in to upgrade your plan.",
@@ -245,7 +248,7 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({
             onClick={handleUpgradePlan}
             disabled={isUpdating}
           >
-            {isUpdating ? 'Upgrading...' : 'Upgrade Now'}
+            {isUpdating ? 'Upgrading...' : user ? 'Upgrade Now' : 'Login to Upgrade'}
           </Button>
         </DialogContent>
       </Dialog>

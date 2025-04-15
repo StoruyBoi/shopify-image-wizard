@@ -28,20 +28,21 @@ export async function generateCodeFromImage(
     
     if (error) {
       console.error('Edge function error:', error);
-      throw new Error(error.message);
+      throw new Error(error.message || "Failed to call the edge function");
     }
     
-    if (!data.success) {
-      throw new Error('Failed to generate code');
+    if (!data || !data.success) {
+      console.error('API response error:', data);
+      throw new Error(data?.error || "Failed to generate code");
     }
     
     return {
       code: data.code || '',
       shopifyLiquid: data.shopifyLiquid || ''
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to generate code:', error);
-    throw error;
+    throw new Error(error.message || "An unexpected error occurred");
   }
 }
 

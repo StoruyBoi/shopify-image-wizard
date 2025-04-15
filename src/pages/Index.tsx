@@ -425,17 +425,22 @@ const Index = () => {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isUpgradeOpen && userCredits.current === 0} onOpenChange={setIsUpgradeOpen}>
+      <Dialog open={isUpgradeOpen} onOpenChange={setIsUpgradeOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>You're out of credits</DialogTitle>
+            <DialogTitle>{userCredits.current === 0 ? "You're out of credits" : "Upgrade your plan"}</DialogTitle>
             <DialogDescription>
-              Upgrade your plan to get more credits and generate unlimited code.
+              {userCredits.current === 0 
+                ? "Upgrade your plan to get more credits and generate unlimited code."
+                : "Get more credits and features with our premium plans."}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="rounded-lg border p-4 bg-muted/30">
+            <div 
+              className="rounded-lg border p-4 bg-muted/30 cursor-pointer"
+              onClick={() => {/* Set to free plan */}}
+            >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium">Free Plan</h3>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Current</span>
@@ -444,7 +449,10 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Credits reset in 24 hours</p>
             </div>
             
-            <div className="rounded-lg border p-4 bg-gradient-to-br from-primary/5 to-primary/10">
+            <div 
+              className="rounded-lg border p-4 bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer"
+              onClick={() => {/* Pro plan action */}}
+            >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-medium">Pro Plan</h3>
                 <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Recommended</span>
@@ -453,13 +461,31 @@ const Index = () => {
               <p className="text-sm">50 credits per day</p>
               <p className="text-sm">Priority support</p>
               <div className="mt-4">
-                <Button className="w-full">Upgrade Now</Button>
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    if (isLoggedIn) {
+                      // Handle upgrade process
+                      toast({
+                        title: "Upgrade in progress",
+                        description: "Processing your upgrade to Pro Plan",
+                      });
+                    } else {
+                      setIsAuthDialogOpen(true);
+                      setIsUpgradeOpen(false);
+                    }
+                  }}
+                >
+                  {isLoggedIn ? "Upgrade Now" : "Sign In To Upgrade"}
+                </Button>
               </div>
             </div>
           </div>
           
           <p className="text-xs text-center text-muted-foreground">
-            Your credits will reset in 24 hours if you prefer to wait.
+            {userCredits.current === 0 
+              ? "Your credits will reset in 24 hours if you prefer to wait."
+              : "Upgrade now to get more features and credits."}
           </p>
         </DialogContent>
       </Dialog>
