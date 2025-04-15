@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { History, PanelLeft, Settings, LogOut, Crown, Plus, X, Trash2, LogIn, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -18,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/hooks/use-user';
 import { supabase } from '@/lib/supabase';
@@ -37,7 +36,7 @@ const ChatSidebar = () => {
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = toast();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const { isLoggedIn, activeChat, setActiveChat, user } = useUser();
 
@@ -50,7 +49,6 @@ const ChatSidebar = () => {
   }, [isLoggedIn, user]);
 
   useEffect(() => {
-    // Load chat details when activeChat changes
     if (activeChat) {
       loadChatDetails(activeChat);
     }
@@ -85,7 +83,6 @@ const ChatSidebar = () => {
   const loadChatDetails = async (chatId: string) => {
     setIsLoading(true);
     try {
-      // Get chat messages
       const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
         .select('*')
@@ -94,7 +91,6 @@ const ChatSidebar = () => {
         
       if (messagesError) throw messagesError;
       
-      // Get chat images
       const { data: imageData, error: imageError } = await supabase
         .from('chat_images')
         .select('*')
@@ -103,7 +99,6 @@ const ChatSidebar = () => {
         
       if (imageError) throw imageError;
       
-      // Get chat details
       const { data: chatData, error: chatError } = await supabase
         .from('chat_history')
         .select('*')
@@ -112,8 +107,6 @@ const ChatSidebar = () => {
         
       if (chatError) throw chatError;
       
-      // Now we have all the data for this chat, update the UI accordingly
-      // This would normally update some state that the main chat interface uses
       toast({
         title: 'Chat loaded',
         description: `Loaded: ${chatData.title}`,
@@ -151,7 +144,6 @@ const ChatSidebar = () => {
     setIsLoading(true);
 
     try {
-      // Delete chat messages first
       const { error: messagesError } = await supabase
         .from('chat_messages')
         .delete()
@@ -159,7 +151,6 @@ const ChatSidebar = () => {
       
       if (messagesError) throw messagesError;
       
-      // Delete chat images
       const { error: imagesError } = await supabase
         .from('chat_images')
         .delete()
@@ -167,7 +158,6 @@ const ChatSidebar = () => {
       
       if (imagesError) throw imagesError;
       
-      // Finally delete the chat entry
       const { error } = await supabase
         .from('chat_history')
         .delete()
@@ -237,7 +227,6 @@ const ChatSidebar = () => {
         />
       </div>
 
-      {/* Delete Chat Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -266,7 +255,6 @@ const ChatSidebar = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Login Dialog */}
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -284,7 +272,6 @@ const ChatSidebar = () => {
   );
 };
 
-// Extracted sidebar content component
 const SidebarContent = ({ 
   chatHistory, 
   activeChat, 

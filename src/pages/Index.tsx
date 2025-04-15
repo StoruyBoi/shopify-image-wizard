@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
@@ -18,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import UserSettingsMenu from '@/components/UserSettingsMenu';
 
 const Index = () => {
-  const { toast } = toast();
+  const { toast } = useToast();
   const { userCredits, setUserCredits, isLoggedIn, activeChat, setActiveChat, user } = useUser();
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<{ file: File; previewUrl: string } | null>(null);
@@ -33,7 +32,6 @@ const Index = () => {
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // Fix pointer-events issue by setting loading state on initial page load
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsPageLoading(false);
@@ -51,7 +49,6 @@ const Index = () => {
     if (!activeChat) return;
     
     try {
-      // Get chat details
       const { data: chatDetails, error: chatError } = await supabase
         .from('chat_history')
         .select('*')
@@ -60,7 +57,6 @@ const Index = () => {
         
       if (chatError) throw chatError;
       
-      // Get chat images (if any)
       const { data: imageData, error: imageError } = await supabase
         .from('chat_images')
         .select('*')
@@ -70,7 +66,6 @@ const Index = () => {
         
       if (imageError) throw imageError;
       
-      // Get chat messages
       const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
         .select('*')
@@ -79,7 +74,6 @@ const Index = () => {
         
       if (messagesError) throw messagesError;
       
-      // Update UI with loaded data
       if (imageData && imageData.length > 0) {
         setGeneratedImageUrl(imageData[0].image_url);
       }
@@ -412,7 +406,6 @@ const Index = () => {
         </footer>
       </SidebarInset>
       
-      {/* Authentication Dialog */}
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

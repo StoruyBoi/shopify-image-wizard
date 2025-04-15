@@ -37,7 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "./ThemeProvider";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/use-user';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +48,7 @@ interface UserSettingsMenuProps {
 
 const UserSettingsMenu = ({ onClose }: UserSettingsMenuProps) => {
   const { theme, setTheme } = useTheme();
-  const { toast } = toast();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
@@ -64,14 +64,18 @@ const UserSettingsMenu = ({ onClose }: UserSettingsMenuProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
-          .select('email, name, avatar_url')
+          .select('email, name')
           .eq('id', user.id)
           .single();
           
         if (data) {
-          setUserProfile(data);
+          setUserProfile({
+            email: data.email || '',
+            name: data.name,
+            avatar_url: undefined // Since avatar_url doesn't exist in profiles table
+          });
         } else {
           setUserProfile({
             email: user.email || '',
