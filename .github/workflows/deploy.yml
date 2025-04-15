@@ -1,0 +1,49 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Deploy to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.HOSTINGER_SERVER }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
+          server-dir: ${{ secrets.HOSTINGER_SERVER_DIR }}
+          local-dir: build/
+          delete-files: true
+      - name: Upload PHP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+            server: ${{ secrets.HOSTINGER_SERVER }}
+            username: ${{ secrets.HOSTINGER_USERNAME }}
+            password: ${{ secrets.HOSTINGER_PASSWORD }}
+            server-dir: ${{ secrets.HOSTINGER_SERVER_DIR }}/
+            local-dir: backend/
+            delete-files: true
+      - name: Set Environment Variable
+        run: |
+          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" > .env
+          cat .env
+        working-directory: ${{ secrets.HOSTINGER_SERVER_DIR }}
