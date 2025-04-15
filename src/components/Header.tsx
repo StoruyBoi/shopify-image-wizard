@@ -4,7 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import CreditsDisplay from './CreditsDisplay';
 import UserSettingsMenu from './UserSettingsMenu';
-import { useUser } from '@/App';
+import { useUser } from '@/hooks/use-user';
 
 interface HeaderProps {
   userCredits?: {
